@@ -9,6 +9,14 @@ const assetsRoutes = require('./routes/assets');
 
 const app = express();
 
+app.get("/", (req, res) => {
+  res.json({
+    status: "ok",
+    service: "Gerador RX API",
+    uptime: process.uptime(),
+  });
+});
+
 connectDB();
 
 app.use(cors());
