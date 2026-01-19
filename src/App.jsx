@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { Search, Settings, User, Plus, Play, Image, Video, Clock, Star, Folder, Upload, Download, Trash2, Share2, Heart, Eye, Edit, MoreVertical, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Check, X, Home, Grid, List, FileText, Camera, Mic, Send, MessageSquare, Users, Lock, Globe, Mail, Phone, Calendar, Tag, Filter, SortAsc, SortDesc, RefreshCw, Save, Undo, Redo, ZoomIn, ZoomOut, RotateCcw, RotateCw, Crop, Scissors, Paintbrush, Palette, Type, AlignLeft, AlignCenter, AlignRight, AlignJustify, Bold, Italic, Underline, Strikethrough, Link, Unlink, Code, Quote, ListOrdered, Table, BarChart, LineChart, PieChart, Bell, AlertCircle, Info, HelpCircle, Shield, Key, Unlock, UserPlus, UserMinus, UserCheck, UserX, UserCircle, UserSquare } from 'lucide-react';
+import { getSessions } from './services/api';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './components/Login';
+import Register from './components/Register';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -10,13 +17,7 @@ const App = () => {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [credits, setCredits] = useState(125);
   const [user, setUser] = useState({ name: 'David', plan: 'Personal - Free' });
-  const [sessions, setSessions] = useState([
-    { id: 1, name: 'Untitled Session', type: 'video', date: '2026-01-10', status: 'completed', thumbnail: 'https://placehold.co/300x200/4F46E5/FFFFFF?text=Video+1' },
-    { id: 2, name: 'Character Animation', type: 'image', date: '2026-01-09', status: 'completed', thumbnail: 'https://placehold.co/300x200/10B981/FFFFFF?text=Image+1' },
-    { id: 3, name: 'Gen-4 Test', type: 'video', date: '2026-01-08', status: 'failed', thumbnail: 'https://placehold.co/300x200/EF4444/FFFFFF?text=Failed' },
-    { id: 4, name: 'Project Alpha', type: 'image', date: '2026-01-07', status: 'completed', thumbnail: 'https://placehold.co/300x200/F59E0B/FFFFFF?text=Project+A' },
-    { id: 5, name: 'Marketing Video', type: 'video', date: '2026-01-06', status: 'queued', thumbnail: 'https://placehold.co/300x200/8B5CF6/FFFFFF?text=Marketing' },
-  ]);
+  const [sessions, setSessions] = useState([]);
   
   const [assets, setAssets] = useState([
     { id: 1, name: 'Character_01.png', type: 'image', size: '2.4MB', date: '2026-01-10', tags: ['character', 'animation'], favorite: true, private: true },
@@ -40,6 +41,22 @@ const App = () => {
     resolution: '1080p',
     style: 'cinematic'
   });
+  
+  useEffect(() => {
+    const loadSessions = async () => {
+      try {
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!userData._id) return;
+
+        const response = await getSessions();
+        setSessions(response.data);
+      } catch (error) {
+        console.error('Erro ao carregar sessões:', error);
+      }
+    };
+
+    loadSessions();
+  }, []);
   
   const handleGenerate = async () => {
     if (!currentGeneration.prompt.trim()) return;
@@ -1191,7 +1208,7 @@ const App = () => {
     </svg>
   );
 
-  return (
+  const DashboardApp = () => (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
       <div className={`flex-1 ml-0 md:ml-64 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
@@ -1210,6 +1227,43 @@ const App = () => {
         </main>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <DashboardApp />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="*"
+          element={
+            <ProtectedRoute>
+              <DashboardApp />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
+    </>
   );
 };
 

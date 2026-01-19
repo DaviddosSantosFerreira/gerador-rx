@@ -22,7 +22,7 @@ router.get('/:userId', auth, async (req, res) => {
     const assets = await Asset.find({ userId: req.params.userId }).sort({ createdAt: -1 });
     res.json(assets);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -59,7 +59,7 @@ router.post('/upload', auth, upload.single('file'), async (req, res) => {
 
     res.json(asset);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -68,17 +68,17 @@ router.delete('/:id', auth, async (req, res) => {
   try {
     const asset = await Asset.findById(req.params.id);
     if (!asset) {
-      return res.status(404).json({ error: 'Asset não encontrado' });
+      return res.status(404).json({ message: 'Asset não encontrado' });
     }
 
     if (asset.userId.toString() !== req.userId.toString()) {
-      return res.status(403).json({ error: 'Não autorizado' });
+      return res.status(403).json({ message: 'Não autorizado' });
     }
 
     await Asset.findByIdAndDelete(req.params.id);
     res.json({ message: 'Asset deletado com sucesso' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -87,18 +87,18 @@ router.patch('/:id', auth, async (req, res) => {
   try {
     const asset = await Asset.findById(req.params.id);
     if (!asset) {
-      return res.status(404).json({ error: 'Asset não encontrado' });
+      return res.status(404).json({ message: 'Asset não encontrado' });
     }
 
     if (asset.userId.toString() !== req.userId.toString()) {
-      return res.status(403).json({ error: 'Não autorizado' });
+      return res.status(403).json({ message: 'Não autorizado' });
     }
 
     Object.assign(asset, req.body);
     await asset.save();
     res.json(asset);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 

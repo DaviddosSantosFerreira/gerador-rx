@@ -14,7 +14,7 @@ router.post('/generate-image', auth, async (req, res) => {
     // Verificar créditos do usuário
     const user = await User.findById(userId);
     if (!user || user.credits < 2) {
-      return res.status(400).json({ error: 'Créditos insuficientes' });
+      return res.status(400).json({ message: 'Créditos insuficientes' });
     }
 
     // Chamar API da Replicate para gerar imagem
@@ -54,7 +54,7 @@ router.post('/generate-image', auth, async (req, res) => {
 
     res.json({ predictionId: response.data.id, sessionId: session._id });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -67,7 +67,7 @@ router.post('/generate-video', auth, async (req, res) => {
     // Verificar créditos do usuário
     const user = await User.findById(userId);
     if (!user || user.credits < 5) {
-      return res.status(400).json({ error: 'Créditos insuficientes' });
+      return res.status(400).json({ message: 'Créditos insuficientes' });
     }
 
     // Chamar API da Replicate
@@ -111,7 +111,7 @@ router.post('/generate-video', auth, async (req, res) => {
 
     res.json({ predictionId: response.data.id, sessionId: session._id });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -129,7 +129,7 @@ router.get('/prediction/:id', async (req, res) => {
 
     res.json(response.data);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -141,7 +141,7 @@ router.post('/update-session/:sessionId', async (req, res) => {
   try {
     const session = await Session.findById(sessionId);
     if (!session) {
-      return res.status(404).json({ error: 'Sessão não encontrada' });
+      return res.status(404).json({ message: 'Sessão não encontrada' });
     }
 
     session.status = status;
@@ -150,7 +150,7 @@ router.post('/update-session/:sessionId', async (req, res) => {
 
     res.json(session);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 

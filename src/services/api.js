@@ -1,72 +1,79 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: 'http://localhost:5000/api',
 });
 
-// Interceptor para adicionar token em todas as requisições
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Interceptor para adicionar JWT automaticamente
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Interceptor de resposta para renovar token automaticamente
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // Se o erro for 401 e não for uma tentativa de retry
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      const storedRefreshToken = localStorage.getItem('refreshToken');
+      
+      if (storedRefreshToken) {
+        try {
+          const response = await api.post('/auth/refresh', { refreshToken: storedRefreshToken });
+          const { token, refreshToken: newRefreshToken } = response.data;
+          
+          // Atualizar tokens no localStorage
+          localStorage.setItem('token', token);
+          localStorage.setItem('refreshToken', newRefreshToken);
+          
+          // Atualizar header da requisição original
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          
+          // Repetir a requisição original
+          return api(originalRequest);
+        } catch (refreshError) {
+          // Refresh falhou - limpar tokens e redirecionar para login
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+          return Promise.reject(refreshError);
+        }
+      }
+    }
+    
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
-// Auth
-export const login = (email, password) => {
-  return api.post('/auth/login', { email, password });
-};
+// AUTH
+export const login = (email, password) =>
+  api.post('/auth/login', { email, password });
 
-export const register = (name, email, password) => {
-  return api.post('/auth/register', { name, email, password });
-};
+export const register = (name, email, password) =>
+  api.post('/auth/register', { name, email, password });
 
-// Replicate - Image Generation
-export const generateImage = (prompt) => {
-  return api.post('/replicate/generate-image', { prompt });
-};
+// Renovar token
+export const refreshToken = (refreshToken) =>
+  api.post('/auth/refresh', { refreshToken });
 
-// Replicate - Video Generation
-export const generateVideo = (data) => {
-  return api.post('/replicate/generate-video', data);
-};
+// Logout
+export const logoutUser = (refreshToken) =>
+  api.post('/auth/logout', { refreshToken });
 
-export const getPrediction = (id) => {
-  return api.get(`/replicate/prediction/${id}`);
-};
+// SESSIONS (exemplo de rota protegida)
+export const getSessions = () =>
+  api.get('/sessions');
 
-export const updateSession = (sessionId, data) => {
-  return api.post(`/replicate/update-session/${sessionId}`, data);
-};
-
-// Sessions
-export const getSessions = (userId) => {
-  return api.get(`/sessions/${userId}`);
-};
-
-export const getSession = (id) => {
-  return api.get(`/sessions/session/${id}`);
-};
-
-// Assets
-export const getAssets = (userId) => {
-  return api.get(`/assets/${userId}`);
-};
-
-export const uploadAsset = (formData) => {
-  return api.post('/assets/upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-};
-
-export const deleteAsset = (id) => {
-  return api.delete(`/assets/${id}`);
-};
-
-export const toggleFavoriteAsset = (id, favorite) => {
-  return api.patch(`/assets/${id}`, { favorite });
-};
-
+export default api;
