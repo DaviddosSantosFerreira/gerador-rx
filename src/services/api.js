@@ -76,4 +76,18 @@ export const logoutUser = (refreshToken) =>
 export const getSessions = () =>
   api.get('/sessions');
 
+// ASSETS
+export const getAssets = () =>
+  api.get('/assets');
+
+export const uploadAsset = (formData) =>
+  api.post('/assets/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+
+export const deleteAsset = (assetId) =>
+  api.delete(`/assets/${assetId}`);
+
 export default api;
