@@ -57,6 +57,16 @@ api.interceptors.response.use(
   }
 );
 
+// REPLICATE
+export const generateVideo = (data) =>
+  api.post('/replicate/generate-video', data);
+
+export const generateImage = (prompt) =>
+  api.post('/replicate/generate-image', { prompt });
+
+export const getPrediction = (predictionId) =>
+  api.get(`/replicate/prediction/${predictionId}`);
+
 // AUTH
 export const login = (email, password) =>
   api.post('/auth/login', { email, password });
