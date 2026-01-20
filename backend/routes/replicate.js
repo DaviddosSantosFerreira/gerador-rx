@@ -8,7 +8,7 @@ const router = express.Router();
 // Gerar imagem
 router.post('/generate-image', auth, async (req, res) => {
   const { prompt, model } = req.body;
-  const userId = req.userId;
+  const userId = req.user.id;
 
   // Mapear o modelo para o ID correto do Replicate
   const imageModelMap = {
@@ -73,7 +73,7 @@ router.post('/generate-image', auth, async (req, res) => {
 router.post('/generate-video', auth, async (req, res) => {
   // O modelo vem do body da requisição
   const { prompt, model, duration, resolution, style } = req.body;
-  const userId = req.userId;
+  const userId = req.user.id;
 
   // Mapear o modelo para o ID correto do Replicate
   const modelMap = {
