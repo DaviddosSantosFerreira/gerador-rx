@@ -9,6 +9,330 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
 import Register from './components/Register';
 
+// Componente Generate FORA de App
+const Generate = ({ 
+  currentGeneration, 
+  setCurrentGeneration, 
+  credits, 
+  isGenerating, 
+  generationProgress, 
+  handleGenerate, 
+  sessions 
+}) => (
+  <div className="p-6">
+    <div className="flex justify-between items-center mb-6">
+      <h1 className="text-2xl font-bold text-gray-800">Generate Videos</h1>
+      <div className="flex items-center space-x-4">
+        <div className="bg-blue-50 px-4 py-2 rounded-full flex items-center space-x-2">
+          <Star className="w-4 h-4 text-yellow-500" />
+          <span className="text-sm font-medium">{credits} credits</span>
+        </div>
+        <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+          Upgrade
+        </button>
+      </div>
+    </div>
+    
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Generation Controls */}
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Create Your Video</h2>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">What do you want to create?</label>
+          <textarea
+            value={currentGeneration.prompt}
+            onChange={(e) => setCurrentGeneration({...currentGeneration, prompt: e.target.value})}
+            placeholder="Describe your creation..."
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            rows={6}
+          />
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Model</label>
+          <select
+            value={currentGeneration.model}
+            onChange={(e) => setCurrentGeneration({...currentGeneration, model: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+            <option value="gen-4">Gen-4</option>
+            <option value="gen-4.5">Gen-4.5 (Soon)</option>
+            <option value="gemini-3-pro">Gemini 3 Pro</option>
+            <option value="veo-3.1">Veo 3.1</option>
+            <option value="flash-2.5">Flash 2.5</option>
+          </select>
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Duration</label>
+          <select
+            value={currentGeneration.duration}
+            onChange={(e) => setCurrentGeneration({...currentGeneration, duration: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+            <option value="5s">5 seconds</option>
+            <option value="10s">10 seconds</option>
+            <option value="15s">15 seconds</option>
+            <option value="30s">30 seconds</option>
+          </select>
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Resolution</label>
+          <select
+            value={currentGeneration.resolution}
+            onChange={(e) => setCurrentGeneration({...currentGeneration, resolution: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+            <option value="720p">720p</option>
+            <option value="1080p">1080p</option>
+            <option value="4k">4K</option>
+          </select>
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Style</label>
+          <select
+            value={currentGeneration.style}
+            onChange={(e) => setCurrentGeneration({...currentGeneration, style: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+            <option value="cinematic">Cinematic</option>
+            <option value="animation">Animation</option>
+            <option value="realistic">Realistic</option>
+            <option value="cartoon">Cartoon</option>
+          </select>
+        </div>
+        
+        <button
+          onClick={handleGenerate}
+          disabled={isGenerating || !currentGeneration.prompt.trim()}
+          className={`w-full py-3 rounded-lg font-medium transition-colors ${
+            isGenerating || !currentGeneration.prompt.trim()
+              ? 'bg-gray-300 cursor-not-allowed'
+              : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+          }`}
+        >
+          {isGenerating ? 'Generating...' : 'Generate Video'}
+        </button>
+        
+        {isGenerating && (
+          <div className="mt-4">
+            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+              <div 
+                className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${generationProgress}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-gray-600">Generating: {generationProgress}%</p>
+          </div>
+        )}
+      </div>
+      
+      {/* Preview */}
+      <div className="lg:col-span-2">
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Preview</h2>
+          
+          {isGenerating ? (
+            <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+              <p className="text-gray-600">Your video is being generated...</p>
+            </div>
+          ) : currentGeneration.prompt ? (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="aspect-video bg-black rounded-lg mb-4 flex items-center justify-center">
+                <div className="text-center">
+                  <Play className="w-12 h-12 text-white mx-auto mb-2 opacity-50" />
+                  <p className="text-white text-sm">Preview will appear here after generation</p>
+                </div>
+              </div>
+              <div className="bg-white p-3 rounded border">
+                <h3 className="font-medium text-gray-800 mb-2">Prompt:</h3>
+                <p className="text-gray-600 text-sm">{currentGeneration.prompt}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg">
+              <Image className="w-12 h-12 text-gray-400 mb-4" />
+              <p className="text-gray-600 text-center">Enter a prompt to generate your video</p>
+            </div>
+          )}
+        </div>
+        
+        {/* Recent Generations */}
+        <div className="mt-6 bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Generations</h2>
+          <div className="space-y-4">
+            {sessions.slice(0, 3).map(session => (
+              <div key={session.id} className="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                <img src={session.thumbnail} alt={session.name} className="w-16 h-10 object-cover rounded mr-3" />
+                <div className="flex-grow">
+                  <h3 className="font-medium text-gray-800">{session.name}</h3>
+                  <p className="text-sm text-gray-500">{session.date}</p>
+                </div>
+                <div className="flex space-x-2">
+                  <button className="p-2 text-gray-500 hover:text-gray-700">
+                    <Eye className="w-5 h-5" />
+                  </button>
+                  <button className="p-2 text-gray-500 hover:text-gray-700">
+                    <Download className="w-5 h-5" />
+                  </button>
+                  <button className="p-2 text-gray-500 hover:text-gray-700">
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// Componente Images FORA de App
+const Images = ({ 
+  imagePrompt, 
+  setImagePrompt, 
+  isGeneratingImage, 
+  handleGenerateImage, 
+  credits, 
+  assets 
+}) => (
+  <div className="p-6">
+    <div className="flex justify-between items-center mb-6">
+      <h1 className="text-2xl font-bold text-gray-800">Generate Images</h1>
+      <div className="flex items-center space-x-4">
+        <div className="bg-blue-50 px-4 py-2 rounded-full flex items-center space-x-2">
+          <Star className="w-4 h-4 text-yellow-500" />
+          <span className="text-sm font-medium">{credits} credits</span>
+        </div>
+        <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+          Upgrade
+        </button>
+      </div>
+    </div>
+    
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Image Generation Controls */}
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Create Your Image</h2>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">What do you want to create?</label>
+          <textarea
+            value={imagePrompt}
+            onChange={(e) => setImagePrompt(e.target.value)}
+            placeholder="Describe your image..."
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            rows={6}
+          />
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Style</label>
+          <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <option value="cinematic">Cinematic</option>
+            <option value="photorealistic">Photorealistic</option>
+            <option value="illustration">Illustration</option>
+            <option value="watercolor">Watercolor</option>
+            <option value="oil-painting">Oil Painting</option>
+          </select>
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Aspect Ratio</label>
+          <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <option value="16:9">16:9 (Landscape)</option>
+            <option value="4:3">4:3 (Standard)</option>
+            <option value="1:1">1:1 (Square)</option>
+            <option value="9:16">9:16 (Portrait)</option>
+          </select>
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Resolution</label>
+          <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <option value="1024x1024">1024x1024</option>
+            <option value="2048x2048">2048x2048</option>
+            <option value="4096x4096">4096x4096</option>
+          </select>
+        </div>
+        
+        <button
+          onClick={handleGenerateImage}
+          disabled={isGeneratingImage || !imagePrompt.trim()}
+          className={`w-full py-3 rounded-lg transition-colors ${
+            isGeneratingImage || !imagePrompt.trim()
+              ? 'bg-gray-300 cursor-not-allowed'
+              : 'bg-purple-600 hover:bg-purple-700 text-white'
+          }`}
+        >
+          {isGeneratingImage ? 'Generating...' : 'Generate Image'}
+        </button>
+      </div>
+      
+      {/* Preview */}
+      <div className="lg:col-span-2">
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Preview</h2>
+          
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="aspect-square bg-black rounded-lg mb-4 flex items-center justify-center">
+              <div className="text-center">
+                <Image className="w-12 h-12 text-white mx-auto mb-2 opacity-50" />
+                <p className="text-white text-sm">Enter a prompt to generate your image</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white p-3 rounded border">
+                <h3 className="font-medium text-gray-800 mb-2">Prompt:</h3>
+                <p className="text-gray-600 text-sm">No prompt entered</p>
+              </div>
+              <div className="bg-white p-3 rounded border">
+                <h3 className="font-medium text-gray-800 mb-2">Style:</h3>
+                <p className="text-gray-600 text-sm">Cinematic</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Recent Images */}
+        <div className="mt-6 bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Images</h2>
+          <div className="space-y-4">
+            {assets.filter(a => a.type === 'image').slice(0, 3).map(asset => (
+              <div key={asset.id} className="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                <div className="w-16 h-10 bg-gray-200 rounded mr-3 flex items-center justify-center">
+                  <Image className="w-6 h-6 text-gray-500" />
+                </div>
+                <div className="flex-grow">
+                  <h3 className="font-medium text-gray-800">{asset.name}</h3>
+                  <p className="text-sm text-gray-500">{asset.size} • {asset.date}</p>
+                </div>
+                <div className="flex space-x-2">
+                  <button className="p-2 text-gray-500 hover:text-gray-700">
+                    <Eye className="w-5 h-5" />
+                  </button>
+                  <button className="p-2 text-gray-500 hover:text-gray-700">
+                    <Download className="w-5 h-5" />
+                  </button>
+                  <button className="p-2 text-gray-500 hover:text-gray-700">
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -1083,310 +1407,26 @@ const App = () => {
         <main className="pt-16 pb-8">
           {activeTab === 'dashboard' && <Dashboard />}
           {activeTab === 'generate' && (
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Generate Videos</h1>
-                <div className="flex items-center space-x-4">
-                  <div className="bg-blue-50 px-4 py-2 rounded-full flex items-center space-x-2">
-                    <Star className="w-4 h-4 text-yellow-500" />
-                    <span className="text-sm font-medium">{credits} credits</span>
-                  </div>
-                  <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
-                    Upgrade
-                  </button>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Generation Controls */}
-                <div className="bg-white rounded-xl shadow-md p-6">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4">Create Your Video</h2>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">What do you want to create?</label>
-                    <textarea
-                      value={currentGeneration.prompt}
-                      onChange={(e) => setCurrentGeneration({...currentGeneration, prompt: e.target.value})}
-                      placeholder="Describe your creation..."
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      rows={6}
-                    />
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Model</label>
-                    <select
-                      value={currentGeneration.model}
-                      onChange={(e) => setCurrentGeneration({...currentGeneration, model: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    >
-                      <option value="gen-4">Gen-4</option>
-                      <option value="gen-4.5">Gen-4.5 (Soon)</option>
-                      <option value="gemini-3-pro">Gemini 3 Pro</option>
-                      <option value="veo-3.1">Veo 3.1</option>
-                      <option value="flash-2.5">Flash 2.5</option>
-                    </select>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Duration</label>
-                    <select
-                      value={currentGeneration.duration}
-                      onChange={(e) => setCurrentGeneration({...currentGeneration, duration: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    >
-                      <option value="5s">5 seconds</option>
-                      <option value="10s">10 seconds</option>
-                      <option value="15s">15 seconds</option>
-                      <option value="30s">30 seconds</option>
-                    </select>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Resolution</label>
-                    <select
-                      value={currentGeneration.resolution}
-                      onChange={(e) => setCurrentGeneration({...currentGeneration, resolution: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    >
-                      <option value="720p">720p</option>
-                      <option value="1080p">1080p</option>
-                      <option value="4k">4K</option>
-                    </select>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Style</label>
-                    <select
-                      value={currentGeneration.style}
-                      onChange={(e) => setCurrentGeneration({...currentGeneration, style: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    >
-                      <option value="cinematic">Cinematic</option>
-                      <option value="animation">Animation</option>
-                      <option value="realistic">Realistic</option>
-                      <option value="cartoon">Cartoon</option>
-                    </select>
-                  </div>
-                  
-                  <button
-                    onClick={handleGenerate}
-                    disabled={isGenerating || !currentGeneration.prompt.trim()}
-                    className={`w-full py-3 rounded-lg font-medium transition-colors ${
-                      isGenerating || !currentGeneration.prompt.trim()
-                        ? 'bg-gray-300 cursor-not-allowed'
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                    }`}
-                  >
-                    {isGenerating ? 'Generating...' : 'Generate Video'}
-                  </button>
-                  
-                  {isGenerating && (
-                    <div className="mt-4">
-                      <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                        <div 
-                          className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${generationProgress}%` }}
-                        ></div>
-                      </div>
-                      <p className="text-sm text-gray-600">Generating: {generationProgress}%</p>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Preview */}
-                <div className="lg:col-span-2">
-                  <div className="bg-white rounded-xl shadow-md p-6">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">Preview</h2>
-                    
-                    {isGenerating ? (
-                      <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-                        <p className="text-gray-600">Your video is being generated...</p>
-                      </div>
-                    ) : currentGeneration.prompt ? (
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <div className="aspect-video bg-black rounded-lg mb-4 flex items-center justify-center">
-                          <div className="text-center">
-                            <Play className="w-12 h-12 text-white mx-auto mb-2 opacity-50" />
-                            <p className="text-white text-sm">Preview will appear here after generation</p>
-                          </div>
-                        </div>
-                        <div className="bg-white p-3 rounded border">
-                          <h3 className="font-medium text-gray-800 mb-2">Prompt:</h3>
-                          <p className="text-gray-600 text-sm">{currentGeneration.prompt}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg">
-                        <Image className="w-12 h-12 text-gray-400 mb-4" />
-                        <p className="text-gray-600 text-center">Enter a prompt to generate your video</p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Recent Generations */}
-                  <div className="mt-6 bg-white rounded-xl shadow-md p-6">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Generations</h2>
-                    <div className="space-y-4">
-                      {sessions.slice(0, 3).map(session => (
-                        <div key={session.id} className="flex items-center p-3 border rounded-lg hover:bg-gray-50">
-                          <img src={session.thumbnail} alt={session.name} className="w-16 h-10 object-cover rounded mr-3" />
-                          <div className="flex-grow">
-                            <h3 className="font-medium text-gray-800">{session.name}</h3>
-                            <p className="text-sm text-gray-500">{session.date}</p>
-                          </div>
-                          <div className="flex space-x-2">
-                            <button className="p-2 text-gray-500 hover:text-gray-700">
-                              <Eye className="w-5 h-5" />
-                            </button>
-                            <button className="p-2 text-gray-500 hover:text-gray-700">
-                              <Download className="w-5 h-5" />
-                            </button>
-                            <button className="p-2 text-gray-500 hover:text-gray-700">
-                              <Share2 className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <Generate
+              currentGeneration={currentGeneration}
+              setCurrentGeneration={setCurrentGeneration}
+              credits={credits}
+              isGenerating={isGenerating}
+              generationProgress={generationProgress}
+              handleGenerate={handleGenerate}
+              sessions={sessions}
+            />
           )}
           {activeTab === 'animate' && <Animate />}
           {activeTab === 'images' && (
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Generate Images</h1>
-                <div className="flex items-center space-x-4">
-                  <div className="bg-blue-50 px-4 py-2 rounded-full flex items-center space-x-2">
-                    <Star className="w-4 h-4 text-yellow-500" />
-                    <span className="text-sm font-medium">{credits} credits</span>
-                  </div>
-                  <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
-                    Upgrade
-                  </button>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Image Generation Controls */}
-                <div className="bg-white rounded-xl shadow-md p-6">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4">Create Your Image</h2>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">What do you want to create?</label>
-                    <textarea
-                      value={imagePrompt}
-                      onChange={(e) => setImagePrompt(e.target.value)}
-                      placeholder="Describe your image..."
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      rows={6}
-                    />
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Style</label>
-                    <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                      <option value="cinematic">Cinematic</option>
-                      <option value="photorealistic">Photorealistic</option>
-                      <option value="illustration">Illustration</option>
-                      <option value="watercolor">Watercolor</option>
-                      <option value="oil-painting">Oil Painting</option>
-                    </select>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Aspect Ratio</label>
-                    <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                      <option value="16:9">16:9 (Landscape)</option>
-                      <option value="4:3">4:3 (Standard)</option>
-                      <option value="1:1">1:1 (Square)</option>
-                      <option value="9:16">9:16 (Portrait)</option>
-                    </select>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Resolution</label>
-                    <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                      <option value="1024x1024">1024x1024</option>
-                      <option value="2048x2048">2048x2048</option>
-                      <option value="4096x4096">4096x4096</option>
-                    </select>
-                  </div>
-                  
-                  <button
-                    onClick={handleGenerateImage}
-                    disabled={isGeneratingImage || !imagePrompt.trim()}
-                    className={`w-full py-3 rounded-lg transition-colors ${
-                      isGeneratingImage || !imagePrompt.trim()
-                        ? 'bg-gray-300 cursor-not-allowed'
-                        : 'bg-purple-600 hover:bg-purple-700 text-white'
-                    }`}
-                  >
-                    {isGeneratingImage ? 'Generating...' : 'Generate Image'}
-                  </button>
-                </div>
-                
-                {/* Preview */}
-                <div className="lg:col-span-2">
-                  <div className="bg-white rounded-xl shadow-md p-6">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">Preview</h2>
-                    
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="aspect-square bg-black rounded-lg mb-4 flex items-center justify-center">
-                        <div className="text-center">
-                          <Image className="w-12 h-12 text-white mx-auto mb-2 opacity-50" />
-                          <p className="text-white text-sm">Enter a prompt to generate your image</p>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white p-3 rounded border">
-                          <h3 className="font-medium text-gray-800 mb-2">Prompt:</h3>
-                          <p className="text-gray-600 text-sm">No prompt entered</p>
-                        </div>
-                        <div className="bg-white p-3 rounded border">
-                          <h3 className="font-medium text-gray-800 mb-2">Style:</h3>
-                          <p className="text-gray-600 text-sm">Cinematic</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Recent Images */}
-                  <div className="mt-6 bg-white rounded-xl shadow-md p-6">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Images</h2>
-                    <div className="space-y-4">
-                      {assets.filter(a => a.type === 'image').slice(0, 3).map(asset => (
-                        <div key={asset.id} className="flex items-center p-3 border rounded-lg hover:bg-gray-50">
-                          <div className="w-16 h-10 bg-gray-200 rounded mr-3 flex items-center justify-center">
-                            <Image className="w-6 h-6 text-gray-500" />
-                          </div>
-                          <div className="flex-grow">
-                            <h3 className="font-medium text-gray-800">{asset.name}</h3>
-                            <p className="text-sm text-gray-500">{asset.size} • {asset.date}</p>
-                          </div>
-                          <div className="flex space-x-2">
-                            <button className="p-2 text-gray-500 hover:text-gray-700">
-                              <Eye className="w-5 h-5" />
-                            </button>
-                            <button className="p-2 text-gray-500 hover:text-gray-700">
-                              <Download className="w-5 h-5" />
-                            </button>
-                            <button className="p-2 text-gray-500 hover:text-gray-700">
-                              <Share2 className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <Images
+              imagePrompt={imagePrompt}
+              setImagePrompt={setImagePrompt}
+              isGeneratingImage={isGeneratingImage}
+              handleGenerateImage={handleGenerateImage}
+              credits={credits}
+              assets={assets}
+            />
           )}
           {activeTab === 'assets-private' && <Assets />}
           {activeTab === 'assets-shared' && <Assets />}
