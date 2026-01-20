@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -311,7 +311,7 @@ const Images = ({
                 </div>
                 <div className="flex-grow">
                   <h3 className="font-medium text-gray-800">{asset.name}</h3>
-                  <p className="text-sm text-gray-500">{asset.size} • {asset.date}</p>
+                  <p className="text-sm text-gray-500">{asset.size} â€¢ {asset.date}</p>
                 </div>
                 <div className="flex space-x-2">
                   <button className="p-2 text-gray-500 hover:text-gray-700">
@@ -333,257 +333,33 @@ const Images = ({
   </div>
 );
 
-const App = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedAsset, setSelectedAsset] = useState(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generationProgress, setGenerationProgress] = useState(0);
-  const [imagePrompt, setImagePrompt] = useState('');
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const [credits, setCredits] = useState(125);
-  const [user, setUser] = useState({ name: 'David', plan: 'Personal - Free' });
-  const [sessions, setSessions] = useState([]);
-  
-  const [assets, setAssets] = useState([
-    { id: 1, name: 'Character_01.png', type: 'image', size: '2.4MB', date: '2026-01-10', tags: ['character', 'animation'], favorite: true, private: true },
-    { id: 2, name: 'Background_01.mp4', type: 'video', size: '15.7MB', date: '2026-01-09', tags: ['background', 'cinematic'], favorite: false, private: true },
-    { id: 3, name: 'Logo_Animation.mov', type: 'video', size: '8.2MB', date: '2026-01-08', tags: ['logo', 'brand'], favorite: true, private: false },
-    { id: 4, name: 'Texture_01.jpg', type: 'image', size: '1.8MB', date: '2026-01-07', tags: ['texture', 'material'], favorite: false, private: true },
-    { id: 5, name: 'Sound_Effect.wav', type: 'audio', size: '3.1MB', date: '2026-01-06', tags: ['sound', 'effect'], favorite: false, private: false },
-  ]);
-  const [isUploadingAsset, setIsUploadingAsset] = useState(false);
-  
-  const [workflows, setWorkflows] = useState([
-    { id: 1, name: 'Seamless Transitions', description: 'Create smooth transitions between scenes', steps: 3, date: '2026-01-10', featured: true },
-    { id: 2, name: 'B-Roll Generator', description: 'Generate B-roll footage for your projects', steps: 5, date: '2026-01-09', featured: true },
-    { id: 3, name: 'New Angles', description: 'Create different camera angles from a single shot', steps: 4, date: '2026-01-08', featured: false },
-    { id: 4, name: 'Video to Video - Scene Edit', description: 'Edit scenes in your videos with AI', steps: 6, date: '2026-01-07', featured: false },
-  ]);
-  
-  const [currentGeneration, setCurrentGeneration] = useState({
-    prompt: '',
-    model: 'gen-4',
-    duration: '5s',
-    resolution: '1080p',
-    style: 'cinematic'
-  });
-  
-  const { user: authUser } = useAuth();
-  
-  useEffect(() => {
-    const loadSessions = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          const response = await getSessions();
-          setSessions(response.data);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar sessões:', error);
-      }
-    };
-    
-    loadSessions();
-  }, []);
-  
-  useEffect(() => {
-    const loadAssets = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          const response = await getAssets();
-          setAssets(response.data);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar assets:', error);
-      }
-    };
-    
-    loadAssets();
-  }, []);
-  
-  useEffect(() => {
-    if (authUser?.credits !== undefined) {
-      setCredits(authUser.credits);
-    }
-  }, [authUser]);
-  
-  const handleGenerate = async () => {
-    if (!currentGeneration.prompt.trim()) return;
-    
-    try {
-      setIsGenerating(true);
-      setGenerationProgress(0);
-      
-      // Chamar API para gerar vídeo
-      const response = await generateVideo({
-        prompt: currentGeneration.prompt,
-        model: currentGeneration.model || 'gen-4',
-        duration: currentGeneration.duration || '10s',
-        resolution: currentGeneration.resolution || '1080p',
-        style: currentGeneration.style || 'cinematic'
-      });
-      
-      const { predictionId, sessionId } = response.data;
-      
-      // Polling para verificar status da geração
-      const checkStatus = async () => {
-        try {
-          const statusResponse = await getPrediction(predictionId);
-          const status = statusResponse.data.status;
-          const output = statusResponse.data.output;
-          
-          if (status === 'succeeded') {
-            setGenerationProgress(100);
-            setIsGenerating(false);
-            
-            // Atualizar lista de sessões
-            try {
-              const sessionsResponse = await getSessions();
-              setSessions(sessionsResponse.data);
-            } catch (err) {
-              console.error('Erro ao atualizar sessões:', err);
-            }
-            
-            // Resetar formulário
-            setCurrentGeneration({
-              prompt: '',
-              model: 'gen-4',
-              duration: '10s',
-              resolution: '1080p',
-              style: 'cinematic'
-            });
-            
-            alert('Vídeo gerado com sucesso!');
-          } else if (status === 'failed') {
-            setIsGenerating(false);
-            setGenerationProgress(0);
-            alert('Erro ao gerar vídeo. Tente novamente.');
-          } else {
-            // Status: starting, processing, etc.
-            setGenerationProgress(prev => Math.min(prev + 10, 90));
-            setTimeout(checkStatus, 3000); // Verificar novamente em 3s
-          }
-        } catch (error) {
-          console.error('Erro ao verificar status:', error);
-          setIsGenerating(false);
-          setGenerationProgress(0);
-          alert('Erro ao verificar status da geração.');
-        }
-      };
-      
-      // Começar verificação após 2 segundos
-      setTimeout(checkStatus, 2000);
-      
-    } catch (error) {
-      console.error('Erro ao gerar vídeo:', error);
-      setIsGenerating(false);
-      setGenerationProgress(0);
-      alert(error.response?.data?.message || 'Erro ao gerar vídeo. Verifique seus créditos.');
-    }
-  };
-  
-  const handleGenerateImage = async () => {
-    if (!imagePrompt.trim()) return;
-    
-    try {
-      setIsGeneratingImage(true);
-      
-      const response = await generateImage(imagePrompt);
-      const { predictionId, sessionId } = response.data;
-      
-      // Polling para verificar status da geração
-      const checkImageStatus = async () => {
-        try {
-          const statusResponse = await getPrediction(predictionId);
-          const status = statusResponse.data.status;
-          const output = statusResponse.data.output;
-          
-          if (status === 'succeeded') {
-            setIsGeneratingImage(false);
-            setImagePrompt('');
-            
-            // Atualizar sessões
-            try {
-              const sessionsResponse = await getSessions();
-              setSessions(sessionsResponse.data);
-            } catch (err) {
-              console.error('Erro ao atualizar sessões:', err);
-            }
-            
-            alert('Imagem gerada com sucesso!');
-          } else if (status === 'failed') {
-            setIsGeneratingImage(false);
-            alert('Erro ao gerar imagem. Tente novamente.');
-          } else {
-            setTimeout(checkImageStatus, 3000);
-          }
-        } catch (error) {
-          console.error('Erro ao verificar status:', error);
-          setIsGeneratingImage(false);
-          alert('Erro ao verificar status da geração.');
-        }
-      };
-      
-      setTimeout(checkImageStatus, 2000);
-      
-    } catch (error) {
-      console.error('Erro ao gerar imagem:', error);
-      setIsGeneratingImage(false);
-      alert(error.response?.data?.message || 'Erro ao gerar imagem. Verifique seus créditos.');
-    }
-  };
-  
-  const handleUploadAsset = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    try {
-      setIsUploadingAsset(true);
-      
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('name', file.name);
-      formData.append('type', file.type.startsWith('image/') ? 'image' : 'video');
-      
-      await uploadAsset(formData);
-      
-      // Recarregar assets
-      try {
-        const response = await getAssets();
-        setAssets(response.data);
-      } catch (err) {
-        console.error('Erro ao recarregar assets:', err);
-      }
-      
-      alert('Asset enviado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao enviar asset:', error);
-      alert(error.response?.data?.message || 'Erro ao enviar asset.');
-    } finally {
-      setIsUploadingAsset(false);
-      // Limpar o input para permitir upload do mesmo arquivo novamente
-      event.target.value = '';
-    }
-  };
-  
-  const toggleFavorite = (assetId) => {
-    setAssets(assets.map(asset => 
-      asset.id === assetId ? { ...asset, favorite: !asset.favorite } : asset
-    ));
-  };
-  
-  const deleteAsset = (assetId) => {
-    setAssets(assets.filter(asset => asset.id !== assetId));
-  };
-  
-  const filteredAssets = assets.filter(asset => 
-    asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    asset.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-  
+const DashboardApp = ({
+  sidebarOpen,
+  setSidebarOpen,
+  activeTab,
+  setActiveTab,
+  currentGeneration,
+  setCurrentGeneration,
+  credits,
+  isGenerating,
+  generationProgress,
+  handleGenerate,
+  sessions,
+  imagePrompt,
+  setImagePrompt,
+  isGeneratingImage,
+  handleGenerateImage,
+  assets,
+  searchQuery,
+  setSearchQuery,
+  user,
+  filteredAssets,
+  toggleFavorite,
+  deleteAsset,
+  handleUploadAsset,
+  isUploadingAsset,
+  workflows
+}) => {
   const Dashboard = () => (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -649,7 +425,7 @@ const App = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-800">Recent Sessions</h2>
           <button className="text-indigo-600 hover:text-indigo-700 font-medium">
-            View All →
+            View All â†’
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -679,7 +455,7 @@ const App = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-800">Featured Workflows</h2>
           <button className="text-indigo-600 hover:text-indigo-700 font-medium">
-            View All →
+            View All â†’
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1163,7 +939,7 @@ const App = () => {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-800">AIFILM Festival 2024</h2>
           <button className="text-indigo-600 hover:text-indigo-700 font-medium">
-            View All →
+            View All â†’
           </button>
         </div>
         
@@ -1184,8 +960,8 @@ const App = () => {
           <div className="border rounded-lg overflow-hidden">
             <img src="https://placehold.co/600x300/4F46E5/FFFFFF?text=SUBMITTED+BUMPERS" alt="Submitted Bumpers" className="w-full h-48 object-cover" />
             <div className="p-4">
-              <h3 className="font-semibold text-gray-800 mb-2">SUBMIT BUMPER 7</h3>
-              <p className="text-sm text-gray-600 mb-2">by Various Artists</p>
+              <h3 className="font-semibold text-gray-800 mb-2">Submitted Bumpers</h3>
+              <p className="text-sm text-gray-600 mb-2">Community submissions</p>
               <div className="flex items-center space-x-2">
                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                   FEATURED
@@ -1399,7 +1175,7 @@ const App = () => {
     </svg>
   );
 
-  const DashboardApp = () => (
+  return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
       <div className={`flex-1 ml-0 md:ml-64 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
@@ -1438,6 +1214,258 @@ const App = () => {
       </div>
     </div>
   );
+};
+
+const App = () => {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [imagePrompt, setImagePrompt] = useState('');
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [credits, setCredits] = useState(125);
+  const [user, setUser] = useState({ name: 'David', plan: 'Personal - Free' });
+  const [sessions, setSessions] = useState([]);
+  
+  const [assets, setAssets] = useState([
+    { id: 1, name: 'Character_01.png', type: 'image', size: '2.4MB', date: '2026-01-10', tags: ['character', 'animation'], favorite: true, private: true },
+    { id: 2, name: 'Background_01.mp4', type: 'video', size: '15.7MB', date: '2026-01-09', tags: ['background', 'cinematic'], favorite: false, private: true },
+    { id: 3, name: 'Logo_Animation.mov', type: 'video', size: '8.2MB', date: '2026-01-08', tags: ['logo', 'brand'], favorite: true, private: false },
+    { id: 4, name: 'Texture_01.jpg', type: 'image', size: '1.8MB', date: '2026-01-07', tags: ['texture', 'material'], favorite: false, private: true },
+    { id: 5, name: 'Sound_Effect.wav', type: 'audio', size: '3.1MB', date: '2026-01-06', tags: ['sound', 'effect'], favorite: false, private: false },
+  ]);
+  const [isUploadingAsset, setIsUploadingAsset] = useState(false);
+  
+  const [workflows, setWorkflows] = useState([
+    { id: 1, name: 'Seamless Transitions', description: 'Create smooth transitions between scenes', steps: 3, date: '2026-01-10', featured: true },
+    { id: 2, name: 'B-Roll Generator', description: 'Generate B-roll footage for your projects', steps: 5, date: '2026-01-09', featured: true },
+    { id: 3, name: 'New Angles', description: 'Create different camera angles from a single shot', steps: 4, date: '2026-01-08', featured: false },
+    { id: 4, name: 'Video to Video - Scene Edit', description: 'Edit scenes in your videos with AI', steps: 6, date: '2026-01-07', featured: false },
+  ]);
+  
+  const [currentGeneration, setCurrentGeneration] = useState({
+    prompt: '',
+    model: 'gen-4',
+    duration: '5s',
+    resolution: '1080p',
+    style: 'cinematic'
+  });
+  
+  const { user: authUser } = useAuth();
+  
+  useEffect(() => {
+    const loadSessions = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const response = await getSessions();
+          setSessions(response.data);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar sessÃµes:', error);
+      }
+    };
+    
+    loadSessions();
+  }, []);
+  
+  useEffect(() => {
+    const loadAssets = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const response = await getAssets();
+          setAssets(response.data);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar assets:', error);
+      }
+    };
+    
+    loadAssets();
+  }, []);
+  
+  useEffect(() => {
+    if (authUser?.credits !== undefined) {
+      setCredits(authUser.credits);
+    }
+  }, [authUser]);
+  
+  const handleGenerate = async () => {
+    if (!currentGeneration.prompt.trim()) return;
+    
+    try {
+      setIsGenerating(true);
+      setGenerationProgress(0);
+      
+      // Chamar API para gerar vÃ­deo
+      const response = await generateVideo({
+        prompt: currentGeneration.prompt,
+        model: currentGeneration.model || 'gen-4',
+        duration: currentGeneration.duration || '10s',
+        resolution: currentGeneration.resolution || '1080p',
+        style: currentGeneration.style || 'cinematic'
+      });
+      
+      const { predictionId, sessionId } = response.data;
+      
+      // Polling para verificar status da geraÃ§Ã£o
+      const checkStatus = async () => {
+        try {
+          const statusResponse = await getPrediction(predictionId);
+          const status = statusResponse.data.status;
+          const output = statusResponse.data.output;
+          
+          if (status === 'succeeded') {
+            setGenerationProgress(100);
+            setIsGenerating(false);
+            
+            // Atualizar lista de sessÃµes
+            try {
+              const sessionsResponse = await getSessions();
+              setSessions(sessionsResponse.data);
+            } catch (err) {
+              console.error('Erro ao atualizar sessÃµes:', err);
+            }
+            
+            // Resetar formulÃ¡rio
+            setCurrentGeneration({
+              prompt: '',
+              model: 'gen-4',
+              duration: '10s',
+              resolution: '1080p',
+              style: 'cinematic'
+            });
+            
+            alert('VÃ­deo gerado com sucesso!');
+          } else if (status === 'failed') {
+            setIsGenerating(false);
+            setGenerationProgress(0);
+            alert('Erro ao gerar vÃ­deo. Tente novamente.');
+          } else {
+            // Status: starting, processing, etc.
+            setGenerationProgress(prev => Math.min(prev + 10, 90));
+            setTimeout(checkStatus, 3000); // Verificar novamente em 3s
+          }
+        } catch (error) {
+          console.error('Erro ao verificar status:', error);
+          setIsGenerating(false);
+          setGenerationProgress(0);
+          alert('Erro ao verificar status da geraÃ§Ã£o.');
+        }
+      };
+      
+      // ComeÃ§ar verificaÃ§Ã£o apÃ³s 2 segundos
+      setTimeout(checkStatus, 2000);
+      
+    } catch (error) {
+      console.error('Erro ao gerar vÃ­deo:', error);
+      setIsGenerating(false);
+      setGenerationProgress(0);
+      alert(error.response?.data?.message || 'Erro ao gerar vÃ­deo. Verifique seus crÃ©ditos.');
+    }
+  };
+  
+  const handleGenerateImage = async () => {
+    if (!imagePrompt.trim()) return;
+    
+    try {
+      setIsGeneratingImage(true);
+      
+      const response = await generateImage(imagePrompt);
+      const { predictionId, sessionId } = response.data;
+      
+      // Polling para verificar status da geraÃ§Ã£o
+      const checkImageStatus = async () => {
+        try {
+          const statusResponse = await getPrediction(predictionId);
+          const status = statusResponse.data.status;
+          const output = statusResponse.data.output;
+          
+          if (status === 'succeeded') {
+            setIsGeneratingImage(false);
+            setImagePrompt('');
+            
+            // Atualizar sessÃµes
+            try {
+              const sessionsResponse = await getSessions();
+              setSessions(sessionsResponse.data);
+            } catch (err) {
+              console.error('Erro ao atualizar sessÃµes:', err);
+            }
+            
+            alert('Imagem gerada com sucesso!');
+          } else if (status === 'failed') {
+            setIsGeneratingImage(false);
+            alert('Erro ao gerar imagem. Tente novamente.');
+          } else {
+            setTimeout(checkImageStatus, 3000);
+          }
+        } catch (error) {
+          console.error('Erro ao verificar status:', error);
+          setIsGeneratingImage(false);
+          alert('Erro ao verificar status da geraÃ§Ã£o.');
+        }
+      };
+      
+      setTimeout(checkImageStatus, 2000);
+      
+    } catch (error) {
+      console.error('Erro ao gerar imagem:', error);
+      setIsGeneratingImage(false);
+      alert(error.response?.data?.message || 'Erro ao gerar imagem. Verifique seus crÃ©ditos.');
+    }
+  };
+  
+  const handleUploadAsset = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    try {
+      setIsUploadingAsset(true);
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('name', file.name);
+      formData.append('type', file.type.startsWith('image/') ? 'image' : 'video');
+      
+      await uploadAsset(formData);
+      
+      // Recarregar assets
+      try {
+        const response = await getAssets();
+        setAssets(response.data);
+      } catch (err) {
+        console.error('Erro ao recarregar assets:', err);
+      }
+      
+      alert('Asset enviado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao enviar asset:', error);
+      alert(error.response?.data?.message || 'Erro ao enviar asset.');
+    } finally {
+      setIsUploadingAsset(false);
+      // Limpar o input para permitir upload do mesmo arquivo novamente
+      event.target.value = '';
+    }
+  };
+  
+  const toggleFavorite = (assetId) => {
+    setAssets(assets.map(asset => 
+      asset.id === assetId ? { ...asset, favorite: !asset.favorite } : asset
+    ));
+  };
+  
+  const deleteAsset = (assetId) => {
+    setAssets(assets.filter(asset => asset.id !== assetId));
+  };
+  
+  const filteredAssets = assets.filter(asset => 
+    asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    asset.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
     <>
@@ -1448,7 +1476,33 @@ const App = () => {
           path="/"
           element={
             <ProtectedRoute>
-              <DashboardApp />
+              <DashboardApp
+                sidebarOpen={sidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                currentGeneration={currentGeneration}
+                setCurrentGeneration={setCurrentGeneration}
+                credits={credits}
+                isGenerating={isGenerating}
+                generationProgress={generationProgress}
+                handleGenerate={handleGenerate}
+                sessions={sessions}
+                imagePrompt={imagePrompt}
+                setImagePrompt={setImagePrompt}
+                isGeneratingImage={isGeneratingImage}
+                handleGenerateImage={handleGenerateImage}
+                assets={assets}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                user={user}
+                filteredAssets={filteredAssets}
+                toggleFavorite={toggleFavorite}
+                deleteAsset={deleteAsset}
+                handleUploadAsset={handleUploadAsset}
+                isUploadingAsset={isUploadingAsset}
+                workflows={workflows}
+              />
             </ProtectedRoute>
           }
         />
@@ -1456,7 +1510,33 @@ const App = () => {
           path="*"
           element={
             <ProtectedRoute>
-              <DashboardApp />
+              <DashboardApp
+                sidebarOpen={sidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                currentGeneration={currentGeneration}
+                setCurrentGeneration={setCurrentGeneration}
+                credits={credits}
+                isGenerating={isGenerating}
+                generationProgress={generationProgress}
+                handleGenerate={handleGenerate}
+                sessions={sessions}
+                imagePrompt={imagePrompt}
+                setImagePrompt={setImagePrompt}
+                isGeneratingImage={isGeneratingImage}
+                handleGenerateImage={handleGenerateImage}
+                assets={assets}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                user={user}
+                filteredAssets={filteredAssets}
+                toggleFavorite={toggleFavorite}
+                deleteAsset={deleteAsset}
+                handleUploadAsset={handleUploadAsset}
+                isUploadingAsset={isUploadingAsset}
+                workflows={workflows}
+              />
             </ProtectedRoute>
           }
         />
@@ -1478,4 +1558,3 @@ const App = () => {
 };
 
 export default App;
-
