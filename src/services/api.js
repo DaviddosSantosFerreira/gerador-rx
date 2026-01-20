@@ -61,8 +61,8 @@ api.interceptors.response.use(
 export const generateVideo = (data) =>
   api.post('/replicate/generate-video', data);
 
-export const generateImage = (prompt) =>
-  api.post('/replicate/generate-image', { prompt });
+export const generateImage = (prompt, model) =>
+  api.post('/replicate/generate-image', { prompt, model });
 
 export const getPrediction = (predictionId) =>
   api.get(`/replicate/prediction/${predictionId}`);

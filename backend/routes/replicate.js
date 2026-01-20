@@ -7,8 +7,19 @@ const router = express.Router();
 
 // Gerar imagem
 router.post('/generate-image', auth, async (req, res) => {
-  const { prompt } = req.body;
+  const { prompt, model } = req.body;
   const userId = req.userId;
+
+  // Mapear o modelo para o ID correto do Replicate
+  const imageModelMap = {
+    'google/nano-banana-pro': 'google/nano-banana-pro',
+    'prunaai/p-image': 'prunaai/p-image',
+    'prunaai/z-image-turbo': 'prunaai/z-image-turbo',
+    'bytedance/seedream-4.5': 'bytedance/seedream-4.5',
+    'black-forest-labs/flux-2-max': 'black-forest-labs/flux-2-max'
+  };
+
+  const replicateModel = imageModelMap[model] || 'google/nano-banana-pro';
 
   try {
     // Verificar créditos do usuário
@@ -21,7 +32,7 @@ router.post('/generate-image', auth, async (req, res) => {
     const response = await axios.post(
       'https://api.replicate.com/v1/predictions',
       {
-        version: 'db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c446677f6b74b90', // Stable Diffusion
+        model: replicateModel,
         input: {
           prompt: prompt,
           width: 1024,
@@ -60,8 +71,20 @@ router.post('/generate-image', auth, async (req, res) => {
 
 // Gerar vídeo com Gen-4
 router.post('/generate-video', auth, async (req, res) => {
+  // O modelo vem do body da requisição
   const { prompt, model, duration, resolution, style } = req.body;
   const userId = req.userId;
+
+  // Mapear o modelo para o ID correto do Replicate
+  const modelMap = {
+    'google/veo-3.1-fast': 'google/veo-3.1-fast',
+    'openai/sora-2': 'openai/sora-2',
+    'kwaivgi/kling-v2.6': 'kwaivgi/kling-v2.6',
+    'wan-video/wan-2.5-t2v': 'wan-video/wan-2.5-t2v',
+    'kwaivgi/kling-v2.5-turbo-pro': 'kwaivgi/kling-v2.5-turbo-pro'
+  };
+
+  const replicateModel = modelMap[model] || 'google/veo-3.1-fast';
 
   try {
     // Verificar créditos do usuário
@@ -74,7 +97,7 @@ router.post('/generate-video', auth, async (req, res) => {
     const response = await axios.post(
       'https://api.replicate.com/v1/predictions',
       {
-        version: 'db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c446677f6b74b90', // Stable Diffusion (exemplo)
+        model: replicateModel,
         input: {
           prompt: prompt,
           width: resolution === '720p' ? 1280 : resolution === '1080p' ? 1920 : 3840,

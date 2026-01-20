@@ -56,11 +56,11 @@ const Generate = ({
             onChange={(e) => setCurrentGeneration({...currentGeneration, model: e.target.value})}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           >
-            <option value="gen-4">Gen-4</option>
-            <option value="gen-4.5">Gen-4.5 (Soon)</option>
-            <option value="gemini-3-pro">Gemini 3 Pro</option>
-            <option value="veo-3.1">Veo 3.1</option>
-            <option value="flash-2.5">Flash 2.5</option>
+            <option value="google/veo-3.1-fast">Google Veo 3.1 Fast (Recomendado)</option>
+            <option value="openai/sora-2">OpenAI Sora 2</option>
+            <option value="kwaivgi/kling-v2.6">Kling V2.6</option>
+            <option value="wan-video/wan-2.5-t2v">Wan 2.5 T2V</option>
+            <option value="kwaivgi/kling-v2.5-turbo-pro">Kling V2.5 Turbo Pro</option>
           </select>
         </div>
         
@@ -199,7 +199,9 @@ const Images = ({
   isGeneratingImage, 
   handleGenerateImage, 
   credits, 
-  assets 
+  assets,
+  imageModel,
+  setImageModel
 }) => (
   <div className="p-6">
     <div className="flex justify-between items-center mb-6">
@@ -232,13 +234,17 @@ const Images = ({
         </div>
         
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Style</label>
-          <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-            <option value="cinematic">Cinematic</option>
-            <option value="photorealistic">Photorealistic</option>
-            <option value="illustration">Illustration</option>
-            <option value="watercolor">Watercolor</option>
-            <option value="oil-painting">Oil Painting</option>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Model</label>
+          <select
+            value={imageModel || 'google/nano-banana-pro'}
+            onChange={(e) => setImageModel(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+            <option value="google/nano-banana-pro">Google Nano Banana Pro (Recomendado)</option>
+            <option value="prunaai/p-image">Pruna P-Image (Mais Rápido)</option>
+            <option value="prunaai/z-image-turbo">Pruna Z-Image Turbo</option>
+            <option value="bytedance/seedream-4.5">ByteDance Seedream 4.5</option>
+            <option value="black-forest-labs/flux-2-max">Flux 2 Max (Máxima Fidelidade)</option>
           </select>
         </div>
         
@@ -358,7 +364,9 @@ const DashboardApp = ({
   deleteAsset,
   handleUploadAsset,
   isUploadingAsset,
-  workflows
+  workflows,
+  imageModel,
+  setImageModel
 }) => {
   const Dashboard = () => (
     <div className="p-6">
@@ -1202,6 +1210,8 @@ const DashboardApp = ({
               handleGenerateImage={handleGenerateImage}
               credits={credits}
               assets={assets}
+              imageModel={imageModel}
+              setImageModel={setImageModel}
             />
           )}
           {activeTab === 'assets-private' && <Assets />}
@@ -1225,6 +1235,7 @@ const App = () => {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [imagePrompt, setImagePrompt] = useState('');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [imageModel, setImageModel] = useState('google/nano-banana-pro');
   const [credits, setCredits] = useState(125);
   const [user, setUser] = useState({ name: 'David', plan: 'Personal - Free' });
   const [sessions, setSessions] = useState([]);
@@ -1374,7 +1385,7 @@ const App = () => {
     try {
       setIsGeneratingImage(true);
       
-      const response = await generateImage(imagePrompt);
+      const response = await generateImage(imagePrompt, imageModel);
       const { predictionId, sessionId } = response.data;
       
       // Polling para verificar status da geraÃ§Ã£o
@@ -1502,6 +1513,8 @@ const App = () => {
                 handleUploadAsset={handleUploadAsset}
                 isUploadingAsset={isUploadingAsset}
                 workflows={workflows}
+                imageModel={imageModel}
+                setImageModel={setImageModel}
               />
             </ProtectedRoute>
           }
@@ -1536,6 +1549,8 @@ const App = () => {
                 handleUploadAsset={handleUploadAsset}
                 isUploadingAsset={isUploadingAsset}
                 workflows={workflows}
+                imageModel={imageModel}
+                setImageModel={setImageModel}
               />
             </ProtectedRoute>
           }
