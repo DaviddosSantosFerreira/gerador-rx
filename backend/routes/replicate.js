@@ -30,20 +30,18 @@ router.post('/generate-image', auth, async (req, res) => {
 
     // Chamar API da Replicate para gerar imagem
     const response = await axios.post(
-      'https://api.replicate.com/v1/predictions',
+      'https://api.replicate.com/v1/models/' + replicateModel + '/predictions',
       {
-        model: replicateModel,
         input: {
-          prompt: prompt,
-          width: 1024,
-          height: 1024,
-        },
+          prompt: prompt
+        }
       },
       {
         headers: {
-          Authorization: `Token ${process.env.REPLICATE_API_TOKEN}`,
+          Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
           'Content-Type': 'application/json',
-        },
+          'Prefer': 'wait'
+        }
       }
     );
 
@@ -95,21 +93,18 @@ router.post('/generate-video', auth, async (req, res) => {
 
     // Chamar API da Replicate
     const response = await axios.post(
-      'https://api.replicate.com/v1/predictions',
+      'https://api.replicate.com/v1/models/' + replicateModel + '/predictions',
       {
-        model: replicateModel,
         input: {
-          prompt: prompt,
-          width: resolution === '720p' ? 1280 : resolution === '1080p' ? 1920 : 3840,
-          height: resolution === '720p' ? 720 : resolution === '1080p' ? 1080 : 2160,
-          num_frames: duration === '5s' ? 15 : duration === '10s' ? 30 : duration === '15s' ? 45 : 90,
-        },
+          prompt: prompt
+        }
       },
       {
         headers: {
-          Authorization: `Token ${process.env.REPLICATE_API_TOKEN}`,
+          Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
           'Content-Type': 'application/json',
-        },
+          'Prefer': 'wait'
+        }
       }
     );
 
