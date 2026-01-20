@@ -90,12 +90,20 @@ router.post('/generate-video', auth, async (req, res) => {
 
   const replicateModel = modelMap[model] || 'google/veo-3.1-fast';
 
+  console.log('=== GENERATE VIDEO ===');
+  console.log('User ID:', userId);
+  console.log('Prompt:', prompt);
+  console.log('Model:', model);
+  console.log('Replicate Model:', replicateModel);
+
   try {
     // Verificar créditos do usuário
     const user = await User.findById(userId);
     if (!user || user.credits < 5) {
       return res.status(400).json({ message: 'Créditos insuficientes' });
     }
+
+    console.log('Chamando Replicate API...');
 
     // Chamar API da Replicate
     const response = await axios.post(
@@ -113,6 +121,9 @@ router.post('/generate-video', auth, async (req, res) => {
         }
       }
     );
+
+    console.log('Resposta do Replicate:', response.data.status);
+    console.log('Output URL:', response.data.output);
 
     // Extrair a URL do output da resposta
     const outputUrl = response.data.output;
@@ -141,6 +152,7 @@ router.post('/generate-video', auth, async (req, res) => {
 
     res.json({ predictionId: response.data.id, sessionId: session._id });
   } catch (error) {
+    console.error('Erro na geração de vídeo:', error.response?.data || error.message);
     res.status(500).json({ message: error.message });
   }
 });
