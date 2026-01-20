@@ -45,16 +45,22 @@ router.post('/generate-image', auth, async (req, res) => {
       }
     );
 
-    // Criar sessão no banco
+    // Extrair a URL do output da resposta
+    const outputUrl = response.data.output;
+    const predictionId = response.data.id;
+    const status = response.data.status === 'succeeded' ? 'completed' : 'generating';
+
+    // Criar sessão no banco com a URL do output
     const session = new Session({
       userId,
       name: `Generated Image ${Date.now()}`,
       type: 'image',
       prompt,
-      status: 'queued',
-      predictionId: response.data.id,
+      model: replicateModel,
+      status: status,
+      outputUrl: outputUrl,
+      predictionId: predictionId,
     });
-
     await session.save();
 
     // Deduzir créditos
@@ -108,19 +114,25 @@ router.post('/generate-video', auth, async (req, res) => {
       }
     );
 
-    // Criar sessão no banco
+    // Extrair a URL do output da resposta
+    const outputUrl = response.data.output;
+    const predictionId = response.data.id;
+    const status = response.data.status === 'succeeded' ? 'completed' : 'generating';
+
+    // Criar sessão no banco com a URL do output
     const session = new Session({
       userId,
       name: `Generated Video ${Date.now()}`,
       type: 'video',
       prompt,
-      model,
+      model: replicateModel,
       duration,
       resolution,
       style,
-      status: 'queued',
+      status: status,
+      outputUrl: outputUrl,
+      predictionId: predictionId,
     });
-
     await session.save();
 
     // Deduzir créditos

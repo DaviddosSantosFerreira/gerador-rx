@@ -10,6 +10,7 @@ const sessionSchema = new mongoose.Schema({
   resolution: { type: String },
   style: { type: String },
   outputUrl: { type: String },
+  predictionId: { type: String },
   status: { type: String, enum: ['queued', 'generating', 'completed', 'failed'], default: 'queued' },
   createdAt: { type: Date, default: Date.now },
 });
