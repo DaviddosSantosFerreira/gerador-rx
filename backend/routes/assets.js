@@ -17,9 +17,9 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // Obter todos os assets do usuário
-router.get('/:userId', auth, async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
-    const assets = await Asset.find({ userId: req.params.userId }).sort({ createdAt: -1 });
+    const assets = await Asset.find({ userId: req.user.id }).sort({ createdAt: -1 });
     res.json(assets);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -30,7 +30,7 @@ router.get('/:userId', auth, async (req, res) => {
 router.post('/upload', auth, upload.single('file'), async (req, res) => {
   try {
     const { name, type, tags } = req.body;
-    const userId = req.userId;
+    const userId = req.user.id;
 
     // Upload para Cloudinary
     const result = await new Promise((resolve, reject) => {
@@ -71,7 +71,7 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Asset não encontrado' });
     }
 
-    if (asset.userId.toString() !== req.userId.toString()) {
+    if (asset.userId.toString() !== req.user.id.toString()) {
       return res.status(403).json({ message: 'Não autorizado' });
     }
 
@@ -90,7 +90,7 @@ router.patch('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Asset não encontrado' });
     }
 
-    if (asset.userId.toString() !== req.userId.toString()) {
+    if (asset.userId.toString() !== req.user.id.toString()) {
       return res.status(403).json({ message: 'Não autorizado' });
     }
 
