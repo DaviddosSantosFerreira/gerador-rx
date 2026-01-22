@@ -17,7 +17,9 @@ const Generate = ({
   isGenerating, 
   generationProgress, 
   handleGenerate, 
-  sessions 
+  sessions,
+  generatedVideo,
+  setGeneratedVideo
 }) => (
   <div className="p-6">
     <div className="flex justify-between items-center mb-6">
@@ -139,6 +141,34 @@ const Generate = ({
             <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
               <p className="text-gray-600">Your video is being generated...</p>
+            </div>
+          ) : generatedVideo ? (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="aspect-video bg-black rounded-lg mb-4 overflow-hidden">
+                <video 
+                  src={generatedVideo} 
+                  controls 
+                  autoPlay 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="flex gap-2 mb-4">
+                <a 
+                  href={generatedVideo} 
+                  download 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg text-center hover:bg-indigo-700"
+                >
+                  Download Video
+                </a>
+                <button 
+                  onClick={() => setGeneratedVideo(null)}
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                >
+                  Generate New
+                </button>
+              </div>
             </div>
           ) : currentGeneration.prompt ? (
             <div className="bg-gray-50 rounded-lg p-4">
@@ -366,7 +396,9 @@ const DashboardApp = ({
   isUploadingAsset,
   workflows,
   imageModel,
-  setImageModel
+  setImageModel,
+  generatedVideo,
+  setGeneratedVideo
 }) => {
   const Dashboard = () => (
     <div className="p-6">
@@ -1199,6 +1231,8 @@ const DashboardApp = ({
               generationProgress={generationProgress}
               handleGenerate={handleGenerate}
               sessions={sessions}
+              generatedVideo={generatedVideo}
+              setGeneratedVideo={setGeneratedVideo}
             />
           )}
           {activeTab === 'animate' && <Animate />}
@@ -1236,6 +1270,7 @@ const App = () => {
   const [imagePrompt, setImagePrompt] = useState('');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [imageModel, setImageModel] = useState('google/nano-banana-pro');
+  const [generatedVideo, setGeneratedVideo] = useState(null);
   const [credits, setCredits] = useState(125);
   const [user, setUser] = useState({ name: 'David', plan: 'Personal - Free' });
   const [sessions, setSessions] = useState([]);
@@ -1340,6 +1375,8 @@ const App = () => {
             } catch (err) {
               console.error('Erro ao atualizar sessÃµes:', err);
             }
+            
+            setGeneratedVideo(statusResponse.data.output);
             
             // Resetar formulÃ¡rio
             setCurrentGeneration({
@@ -1515,6 +1552,8 @@ const App = () => {
                 workflows={workflows}
                 imageModel={imageModel}
                 setImageModel={setImageModel}
+                generatedVideo={generatedVideo}
+                setGeneratedVideo={setGeneratedVideo}
               />
             </ProtectedRoute>
           }
@@ -1551,6 +1590,8 @@ const App = () => {
                 workflows={workflows}
                 imageModel={imageModel}
                 setImageModel={setImageModel}
+                generatedVideo={generatedVideo}
+                setGeneratedVideo={setGeneratedVideo}
               />
             </ProtectedRoute>
           }
