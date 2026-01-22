@@ -1638,7 +1638,7 @@ const App = () => {
   };
   
   const handleAnimateCharacter = async () => {
-    if (!animateImagePreview) {
+    if (!animateImageFile) {
       alert('Por favor, faça upload de uma imagem primeiro.');
       return;
     }
@@ -1646,8 +1646,52 @@ const App = () => {
     try {
       setIsAnimating(true);
 
+      // Primeiro, fazer upload da imagem
+      const formData = new FormData();
+      formData.append('file', animateImageFile);
+      formData.append('name', animateImageFile.name);
+      formData.append('type', 'image');
+
+      let imageUrl = animateImagePreview;
+
+      // Tentar fazer upload para obter URL
+      try {
+        const uploadResponse = await uploadAsset(formData);
+        if (uploadResponse.data && uploadResponse.data.url) {
+          imageUrl = uploadResponse.data.url;
+        }
+      } catch (uploadError) {
+        console.log('Upload falhou, usando base64 comprimido');
+        // Se o upload falhar, comprimir a imagem base64
+        // Criar um canvas para redimensionar a imagem
+        const img = new Image();
+        img.src = animateImagePreview;
+        await new Promise((resolve) => {
+          img.onload = resolve;
+        });
+        
+        const canvas = document.createElement('canvas');
+        const maxSize = 512;
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > height && width > maxSize) {
+          height = (height * maxSize) / width;
+          width = maxSize;
+        } else if (height > maxSize) {
+          width = (width * maxSize) / height;
+          height = maxSize;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        imageUrl = canvas.toDataURL('image/jpeg', 0.7);
+      }
+
       const response = await animateCharacter({
-        imageUrl: animateImagePreview,
+        imageUrl: imageUrl,
         prompt: animatePrompt,
         model: animateModel,
         duration: animateDuration
