@@ -506,7 +506,10 @@ const Animate = ({
             onChange={(e) => setAnimateDuration(e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
           >
+            <option value="4s">4 seconds</option>
             <option value="5s">5 seconds</option>
+            <option value="6s">6 seconds</option>
+            <option value="8s">8 seconds</option>
             <option value="10s">10 seconds</option>
           </select>
         </div>
@@ -1434,7 +1437,7 @@ const App = () => {
   const [animateImageUrl, setAnimateImageUrl] = useState('');
   const [animatePrompt, setAnimatePrompt] = useState('');
   const [animateModel, setAnimateModel] = useState('veo-3.1-fast');
-  const [animateDuration, setAnimateDuration] = useState('5s');
+  const [animateDuration, setAnimateDuration] = useState('4s');
   const [isAnimating, setIsAnimating] = useState(false);
   const [animatedVideo, setAnimatedVideo] = useState(null);
   const [animateImageFile, setAnimateImageFile] = useState(null);

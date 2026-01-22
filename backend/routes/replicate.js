@@ -235,7 +235,20 @@ router.post('/animate-character', auth, async (req, res) => {
         input: {
           image: imageUrl,
           prompt: prompt || 'animate this character with natural movement',
-          duration: duration === '10s' ? 10 : 5
+          duration: (() => {
+            // Cada modelo tem durações diferentes permitidas
+            if (replicateModel.includes('veo')) {
+              // Google Veo aceita: 4, 6, 8
+              return duration === '8s' ? 8 : duration === '6s' ? 6 : 4;
+            } else if (replicateModel.includes('pixverse')) {
+              // PixVerse aceita: 5, 8
+              return duration === '8s' ? 8 : 5;
+            } else if (replicateModel.includes('kling')) {
+              // Kling aceita: 5, 10
+              return duration === '10s' ? 10 : 5;
+            }
+            return 5;
+          })()
         }
       },
       {
