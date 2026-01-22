@@ -32,3 +32,5 @@ O servidor estará rodando em `http://localhost:5000`
 - `routes/` - Rotas da API (auth, replicate, sessions, assets)
 - `server.js` - Arquivo principal do servidor
 
+
+
