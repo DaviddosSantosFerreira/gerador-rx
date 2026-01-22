@@ -199,3 +199,5 @@ Nesse cenário, a URL do frontend e da API é a mesma; o `VITE_API_URL` pode ser
 - **Rodar:** `.env` no backend, MongoDB, `npm install` e `npm run dev` no backend e no frontend. Para ter login/registro de verdade, falta integrar `Register`/`Login` no `App` (ex. com React Router) e usar o `AuthContext`.
 - **Deploy:** `VITE_API_URL` no frontend, CORS no backend, build do frontend, backend em Render/Railway (ou similar) com variáveis de produção, MongoDB Atlas e, se for usar, Replicate e Cloudinary configurados.
 
+
+

@@ -94,3 +94,5 @@
 - O upload de assets precisa de conta no Cloudinary.
 - Todas as rotas protegidas precisam do token JWT no header `Authorization: Bearer <token>`
 
+
+

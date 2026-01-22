@@ -90,6 +90,9 @@ export const logoutUser = (refreshToken) =>
 export const getSessions = () =>
   api.get('/sessions');
 
+export const deleteSession = (sessionId) =>
+  api.delete(`/sessions/${sessionId}`);
+
 // ASSETS
 export const getAssets = () =>
   api.get('/assets');

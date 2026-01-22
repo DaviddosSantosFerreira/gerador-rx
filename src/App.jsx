@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Search, Settings, User, Plus, Play, Image, Video, Clock, Star, Folder, Upload, Download, Trash2, Share2, Heart, Eye, Edit, MoreVertical, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Check, X, Home, Grid, List, FileText, Camera, Mic, Send, MessageSquare, Users, Lock, Globe, Mail, Phone, Calendar, Tag, Filter, SortAsc, SortDesc, RefreshCw, Save, Undo, Redo, ZoomIn, ZoomOut, RotateCcw, RotateCw, Crop, Scissors, Paintbrush, Palette, Type, AlignLeft, AlignCenter, AlignRight, AlignJustify, Bold, Italic, Underline, Strikethrough, Link, Unlink, Code, Quote, ListOrdered, Table, BarChart, LineChart, PieChart, Bell, AlertCircle, Info, HelpCircle, Shield, Key, Unlock, UserPlus, UserMinus, UserCheck, UserX, UserCircle, UserSquare } from 'lucide-react';
-import { generateVideo, generateImage, getPrediction, getSessions, uploadAsset, getAssets, animateCharacter } from './services/api';
+import { generateVideo, generateImage, getPrediction, getSessions, uploadAsset, getAssets, animateCharacter, deleteSession } from './services/api';
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
@@ -661,7 +661,8 @@ const DashboardApp = ({
   animatedVideo,
   setAnimatedVideo,
   handleAnimateCharacter,
-  handleAnimateImageUpload
+  handleAnimateImageUpload,
+  handleDeleteSession
 }) => {
   const Dashboard = () => (
     <div className="p-6">
@@ -733,12 +734,18 @@ const DashboardApp = ({
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sessions.slice(0, 3).map(session => (
-            <div key={session.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-              <img src={session.thumbnail} alt={session.name} className="w-full h-32 object-cover" />
+            <div key={session._id || session.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow relative">
+              <button
+                onClick={() => handleDeleteSession(session._id || session.id)}
+                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 z-10"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <img src={session.thumbnail || session.outputUrl || 'https://placehold.co/400x200/1a1a2e/FFFFFF?text=No+Preview'} alt={session.name} className="w-full h-32 object-cover" />
               <div className="p-4">
                 <h3 className="font-semibold text-gray-800 truncate">{session.name}</h3>
                 <div className="flex justify-between items-center mt-2">
-                  <span className="text-sm text-gray-500">{session.date}</span>
+                  <span className="text-sm text-gray-500">{new Date(session.createdAt).toLocaleDateString()}</span>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                     session.status === 'completed' ? 'bg-green-100 text-green-800' :
                     session.status === 'failed' ? 'bg-red-100 text-red-800' :
@@ -992,6 +999,18 @@ const DashboardApp = ({
               <Settings className="w-5 h-5" />
             </button>
           </div>
+          <button 
+            onClick={() => {
+              localStorage.removeItem('token');
+              localStorage.removeItem('refreshToken');
+              localStorage.removeItem('user');
+              window.location.href = '/login';
+            }}
+            className="w-full mt-3 flex items-center justify-center px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors"
+          >
+            <X className="w-4 h-4 mr-2" />
+            Sair
+          </button>
           
           <div className="space-y-2">
             <button className="w-full flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
@@ -1464,6 +1483,23 @@ const App = () => {
     }
   };
 
+  const handleDeleteSession = async (sessionId) => {
+    if (!window.confirm('Tem certeza que deseja deletar este projeto?')) {
+      return;
+    }
+    
+    try {
+      await deleteSession(sessionId);
+      // Atualizar lista de sessões
+      const response = await getSessions();
+      setSessions(response.data);
+      alert('Projeto deletado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao deletar sessão:', error);
+      alert('Erro ao deletar projeto.');
+    }
+  };
+
   const handleUploadAsset = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -1550,6 +1586,7 @@ const App = () => {
                 setAnimatedVideo={setAnimatedVideo}
                 handleAnimateCharacter={handleAnimateCharacter}
                 handleAnimateImageUpload={handleAnimateImageUpload}
+                handleDeleteSession={handleDeleteSession}
               />
             </ProtectedRoute>
           }
@@ -1602,6 +1639,7 @@ const App = () => {
                 setAnimatedVideo={setAnimatedVideo}
                 handleAnimateCharacter={handleAnimateCharacter}
                 handleAnimateImageUpload={handleAnimateImageUpload}
+                handleDeleteSession={handleDeleteSession}
               />
             </ProtectedRoute>
           }
