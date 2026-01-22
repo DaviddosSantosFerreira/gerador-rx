@@ -231,7 +231,9 @@ const Images = ({
   credits, 
   assets,
   imageModel,
-  setImageModel
+  setImageModel,
+  generatedImage,
+  setGeneratedImage
 }) => (
   <div className="p-6">
     <div className="flex justify-between items-center mb-6">
@@ -315,25 +317,48 @@ const Images = ({
         <div className="bg-white rounded-xl shadow-md p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Preview</h2>
           
-          <div className="bg-gray-50 rounded-lg p-4">
+          {isGeneratingImage ? (
+            <div className="aspect-square bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Your image is being generated...</p>
+              </div>
+            </div>
+          ) : generatedImage ? (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="aspect-square bg-black rounded-lg mb-4 overflow-hidden">
+                <img 
+                  src={Array.isArray(generatedImage) ? generatedImage[0] : generatedImage} 
+                  alt="Generated" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="flex gap-2 mb-4">
+                <a 
+                  href={Array.isArray(generatedImage) ? generatedImage[0] : generatedImage} 
+                  download 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg text-center hover:bg-purple-700"
+                >
+                  Download Image
+                </a>
+                <button 
+                  onClick={() => setGeneratedImage(null)}
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                >
+                  Generate New
+                </button>
+              </div>
+            </div>
+          ) : (
             <div className="aspect-square bg-black rounded-lg mb-4 flex items-center justify-center">
               <div className="text-center">
                 <Image className="w-12 h-12 text-white mx-auto mb-2 opacity-50" />
                 <p className="text-white text-sm">Enter a prompt to generate your image</p>
               </div>
             </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white p-3 rounded border">
-                <h3 className="font-medium text-gray-800 mb-2">Prompt:</h3>
-                <p className="text-gray-600 text-sm">No prompt entered</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <h3 className="font-medium text-gray-800 mb-2">Style:</h3>
-                <p className="text-gray-600 text-sm">Cinematic</p>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
         
         {/* Recent Images */}
@@ -398,7 +423,9 @@ const DashboardApp = ({
   imageModel,
   setImageModel,
   generatedVideo,
-  setGeneratedVideo
+  setGeneratedVideo,
+  generatedImage,
+  setGeneratedImage
 }) => {
   const Dashboard = () => (
     <div className="p-6">
@@ -1246,6 +1273,8 @@ const DashboardApp = ({
               assets={assets}
               imageModel={imageModel}
               setImageModel={setImageModel}
+              generatedImage={generatedImage}
+              setGeneratedImage={setGeneratedImage}
             />
           )}
           {activeTab === 'assets-private' && <Assets />}
@@ -1271,6 +1300,7 @@ const App = () => {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [imageModel, setImageModel] = useState('google/nano-banana-pro');
   const [generatedVideo, setGeneratedVideo] = useState(null);
+  const [generatedImage, setGeneratedImage] = useState(null);
   const [credits, setCredits] = useState(125);
   const [user, setUser] = useState({ name: 'David', plan: 'Personal - Free' });
   const [sessions, setSessions] = useState([]);
@@ -1444,6 +1474,8 @@ const App = () => {
               console.error('Erro ao atualizar sessÃµes:', err);
             }
             
+            setGeneratedImage(statusResponse.data.output);
+            
             alert('Imagem gerada com sucesso!');
           } else if (status === 'failed') {
             setIsGeneratingImage(false);
@@ -1554,6 +1586,8 @@ const App = () => {
                 setImageModel={setImageModel}
                 generatedVideo={generatedVideo}
                 setGeneratedVideo={setGeneratedVideo}
+                generatedImage={generatedImage}
+                setGeneratedImage={setGeneratedImage}
               />
             </ProtectedRoute>
           }
@@ -1592,6 +1626,8 @@ const App = () => {
                 setImageModel={setImageModel}
                 generatedVideo={generatedVideo}
                 setGeneratedVideo={setGeneratedVideo}
+                generatedImage={generatedImage}
+                setGeneratedImage={setGeneratedImage}
               />
             </ProtectedRoute>
           }
