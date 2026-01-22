@@ -22,12 +22,6 @@ router.post('/generate-image', auth, async (req, res) => {
   const replicateModel = imageModelMap[model] || 'google/nano-banana-pro';
 
   try {
-    // Verificar créditos do usuário
-    const user = await User.findById(userId);
-    if (!user || user.credits < 2) {
-      return res.status(400).json({ message: 'Créditos insuficientes' });
-    }
-
     // Chamar API da Replicate para gerar imagem
     const response = await axios.post(
       'https://api.replicate.com/v1/models/' + replicateModel + '/predictions',
@@ -63,10 +57,6 @@ router.post('/generate-image', auth, async (req, res) => {
     });
     await session.save();
 
-    // Deduzir créditos
-    user.credits -= 2;
-    await user.save();
-
     res.json({ predictionId: response.data.id, sessionId: session._id });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -97,12 +87,6 @@ router.post('/generate-video', auth, async (req, res) => {
   console.log('Replicate Model:', replicateModel);
 
   try {
-    // Verificar créditos do usuário
-    const user = await User.findById(userId);
-    if (!user || user.credits < 5) {
-      return res.status(400).json({ message: 'Créditos insuficientes' });
-    }
-
     console.log('Chamando Replicate API...');
 
     // Chamar API da Replicate
@@ -145,10 +129,6 @@ router.post('/generate-video', auth, async (req, res) => {
       predictionId: predictionId,
     });
     await session.save();
-
-    // Deduzir créditos
-    user.credits -= 5;
-    await user.save();
 
     res.json({ predictionId: response.data.id, sessionId: session._id });
   } catch (error) {
@@ -220,12 +200,6 @@ router.post('/animate-character', auth, async (req, res) => {
   console.log('Replicate Model:', replicateModel);
 
   try {
-    // Verificar créditos do usuário
-    const user = await User.findById(userId);
-    if (!user || user.credits < 10) {
-      return res.status(400).json({ message: 'Créditos insuficientes. Animação requer 10 créditos.' });
-    }
-
     console.log('Chamando Replicate API para animação...');
 
     // Chamar API da Replicate
@@ -279,10 +253,6 @@ router.post('/animate-character', auth, async (req, res) => {
       predictionId: predictionId,
     });
     await session.save();
-
-    // Deduzir créditos
-    user.credits -= 10;
-    await user.save();
 
     res.json({ predictionId: response.data.id, sessionId: session._id });
   } catch (error) {
