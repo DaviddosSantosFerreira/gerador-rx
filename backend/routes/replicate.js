@@ -196,5 +196,87 @@ router.post('/update-session/:sessionId', async (req, res) => {
   }
 });
 
+// Animar personagem (image-to-video)
+router.post('/animate-character', auth, async (req, res) => {
+  const { imageUrl, prompt, model, duration } = req.body;
+  const userId = req.user.id;
+
+  // Mapear o modelo selecionado
+  const animationModelMap = {
+    'kling-v2.5-turbo-pro': 'kwaivgi/kling-v2.5-turbo-pro',
+    'veo-3.1-fast': 'google/veo-3.1-fast',
+    'veo-3.1': 'google/veo-3.1',
+    'pixverse-v5': 'pixverse/pixverse-v5',
+    'veo-3': 'google/veo-3'
+  };
+
+  const replicateModel = animationModelMap[model] || 'google/veo-3.1-fast';
+
+  console.log('=== ANIMATE CHARACTER ===');
+  console.log('User ID:', userId);
+  console.log('Image URL:', imageUrl);
+  console.log('Prompt:', prompt);
+  console.log('Model:', model);
+  console.log('Replicate Model:', replicateModel);
+
+  try {
+    // Verificar créditos do usuário
+    const user = await User.findById(userId);
+    if (!user || user.credits < 10) {
+      return res.status(400).json({ message: 'Créditos insuficientes. Animação requer 10 créditos.' });
+    }
+
+    console.log('Chamando Replicate API para animação...');
+
+    // Chamar API da Replicate
+    const response = await axios.post(
+      'https://api.replicate.com/v1/models/' + replicateModel + '/predictions',
+      {
+        input: {
+          image: imageUrl,
+          prompt: prompt || 'animate this character with natural movement',
+          duration: duration === '10s' ? 10 : 5
+        }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log('Resposta do Replicate:', response.data.status);
+    console.log('Prediction ID:', response.data.id);
+
+    const predictionId = response.data.id;
+    const status = response.data.status === 'succeeded' ? 'completed' : 'generating';
+    const outputUrl = response.data.output || null;
+
+    // Criar sessão no banco
+    const session = new Session({
+      userId,
+      name: `Animated Character ${Date.now()}`,
+      type: 'video',
+      prompt: prompt || 'Character animation',
+      model: replicateModel,
+      duration,
+      status: status,
+      outputUrl: outputUrl,
+      predictionId: predictionId,
+    });
+    await session.save();
+
+    // Deduzir créditos
+    user.credits -= 10;
+    await user.save();
+
+    res.json({ predictionId: response.data.id, sessionId: session._id });
+  } catch (error) {
+    console.error('Erro na animação:', error.response?.data || error.message);
+    res.status(500).json({ message: error.response?.data?.detail || error.message });
+  }
+});
+
 module.exports = router;
 
