@@ -1258,7 +1258,7 @@ const App = () => {
   
   const [currentGeneration, setCurrentGeneration] = useState({
     prompt: '',
-    model: 'gen-4',
+    model: 'google/veo-3.1-fast',
     duration: '5s',
     resolution: '1080p',
     style: 'cinematic'
@@ -1314,7 +1314,7 @@ const App = () => {
       // Chamar API para gerar vÃ­deo
       const response = await generateVideo({
         prompt: currentGeneration.prompt,
-        model: currentGeneration.model || 'gen-4',
+        model: currentGeneration.model || 'google/veo-3.1-fast',
         duration: currentGeneration.duration || '10s',
         resolution: currentGeneration.resolution || '1080p',
         style: currentGeneration.style || 'cinematic'
@@ -1344,7 +1344,7 @@ const App = () => {
             // Resetar formulÃ¡rio
             setCurrentGeneration({
               prompt: '',
-              model: 'gen-4',
+              model: 'google/veo-3.1-fast',
               duration: '10s',
               resolution: '1080p',
               style: 'cinematic'
