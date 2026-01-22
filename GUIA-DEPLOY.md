@@ -1,320 +1,359 @@
-# 📋 Guia Completo: Do Projeto Rodando ao Deploy
+# 📋 GUIA COMPLETO - GERADOR-RX
+
+## 📅 Última Atualização: Janeiro 2026
 
 ---
 
-# 📘 RELATÓRIO COMPLETO DO PROJETO GERADOR-RX
+# 🎯 VISÃO GERAL DO PROJETO
 
-## ✅ O QUE JÁ ESTÁ FUNCIONANDO
+O **Gerador RX** é uma plataforma SaaS de geração de conteúdo com IA que permite:
+- **Gerar Vídeos** a partir de texto (text-to-video)
+- **Gerar Imagens** a partir de texto (text-to-image)
+- **Animar Personagens** a partir de imagens (image-to-video)
 
-### Backend (Render)
+## 🌐 URLs de Produção
 
-✅ Servidor Node.js rodando na porta 5000  
-✅ MongoDB Atlas conectado  
-✅ Autenticação JWT implementada  
-✅ Refresh Token implementado  
-✅ Rate Limiting (login, registro, refresh)  
-✅ Validação de email e senha  
-✅ Middleware de tratamento de erros  
-✅ Rotas protegidas com JWT  
-✅ Integração com Replicate API (modelos de vídeo e imagem configurados)  
-✅ Modelos de vídeo: google/veo-3.1-fast, openai/sora-2, kwaivgi/kling-v2.6, wan-video/wan-2.5-t2v, kwaivgi/kling-v2.5-turbo-pro  
-✅ Modelos de imagem: google/nano-banana-pro, prunaai/p-image, prunaai/z-image-turbo, bytedance/seedream-4.5, black-forest-labs/flux-2-max  
-✅ URL: https://gerador-rx.onrender.com
-
-### Frontend (Vercel)
-
-✅ React + Vite funcionando  
-✅ Interface de usuário completa  
-✅ Telas de Login/Registro  
-✅ Dashboard com navegação  
-✅ Formulários de geração de vídeo e imagem  
-✅ Toasts de feedback visual  
-✅ Componentes Generate e Images movidos para fora do App (correção de foco)  
-✅ Variável VITE_API_URL configurada no Vercel  
-✅ URL: https://gerador-rx.vercel.app
-
-### Replicate
-
-✅ Conta ativa com créditos ($2.01 restantes, $14.39 usados)  
-✅ Gerações anteriores funcionaram (kwaivgi/kling-v2.6 gerou vídeo com sucesso)
+| Serviço | URL |
+|---------|-----|
+| **Frontend (Vercel)** | https://gerador-rx.vercel.app |
+| **Backend (Render)** | https://gerador-rx.onrender.com |
+| **Banco de Dados** | MongoDB Atlas |
+| **API de IA** | Replicate.com |
 
 ---
 
-## ❌ ERROS IDENTIFICADOS NO CONSOLE
+# ✅ FUNCIONALIDADES IMPLEMENTADAS
 
-### Erro 1: CORS Bloqueado
-```
-Access to XMLHttpRequest at 'http://localhost:5000/api/auth/login' 
-from origin 'https://gerador-rx.vercel.app' has been blocked by CORS policy
-```
-**Problema:** O frontend está tentando acessar localhost:5000 em vez de https://gerador-rx.onrender.com
+## 1. Generate Videos ✅
+- **Descrição:** Gera vídeos a partir de prompts de texto
+- **Modelos disponíveis:**
+  - Google Veo 3.1 Fast (Recomendado)
+  - OpenAI Sora 2
+  - Kling V2.6
+  - Wan 2.5 T2V
+  - Kling V2.5 Turbo Pro
+- **Custo:** 5 créditos por geração
 
-### Erro 2: localhost:5000 (ERR_FAILED)
-```
-localhost:5000/api/auth/login - Failed to load resource: net::ERR_FAILED
-localhost:5000/api/auth/register - Failed to load resource: 400 (Bad Request)
-```
-**Problema:** As requisições estão indo para localhost em vez do backend em produção
+## 2. Generate Images ✅
+- **Descrição:** Gera imagens a partir de prompts de texto
+- **Modelos disponíveis:**
+  - Google Nano Banana Pro (Recomendado)
+  - Pruna P-Image (Mais Rápido)
+  - Pruna Z-Image Turbo
+  - ByteDance Seedream 4.5
+  - Flux 2 Max (Máxima Fidelidade)
+- **Custo:** 2 créditos por geração
 
-### Erro 3: Erro 500 na geração
-```
-POST http://localhost:5000/api/replicate/generate-video - 500 (Internal Server Error)
-Erro ao gerar vídeo: {message: 'Request failed with status code 500'}
-```
-**Problema:** Mesmo problema - requisições indo para localhost
+## 3. Animate Characters ✅
+- **Descrição:** Anima imagens estáticas transformando-as em vídeos
+- **Modelos disponíveis:**
+  - Google Veo 3.1 Fast (Recomendado)
+  - Google Veo 3.1 (Alta Qualidade)
+  - Google Veo 3 (Com Áudio)
+  - Kling V2.5 Turbo Pro (Motion Suave)
+  - PixVerse V5 (Anime/Cartoon)
+- **Durações:** 4s, 5s, 6s, 8s, 10s (varia por modelo)
+- **Custo:** 10 créditos por geração
 
-### Erro 4: Erro 402
-```
-Request failed with status code 402
-```
-**Problema:** Créditos insuficientes (mas você tem créditos no Replicate, então é o sistema interno)
+## 4. Workflows ⏳ (UI apenas)
+- Interface visual presente
+- Funcionalidade para implementação futura
 
----
-
-## 🔍 CAUSA RAIZ DO PROBLEMA
-
-O frontend não está usando a variável de ambiente `VITE_API_URL` corretamente. Mesmo com a variável configurada no Vercel, o código está usando `localhost:5000`.
-
-**Isso acontece porque:**
-
-1. A variável `VITE_API_URL` é injetada no momento do build, não em runtime
-2. O arquivo `src/services/api.js` pode não estar lendo a variável corretamente
-3. Ou o build foi feito antes da variável ser configurada
-
----
-
-## 📝 PASSO A PASSO: O QUE FALTA FAZER
-
-### 🔧 PASSO 1: Corrigir a URL da API no Frontend
-
-**Arquivo:** `src/services/api.js`
-
-**Problema:** O código está usando `http://localhost:5000/api` hardcoded.
-
-**Solução:** Atualizar para usar variável de ambiente ou lógica condicional.
-
-**Opção A - Usar variável de ambiente (Recomendado):**
-```javascript
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-});
-```
-
-**Opção B - Lógica condicional baseada no modo:**
-```javascript
-const api = axios.create({
-  baseURL:
-    import.meta.env.MODE === 'development'
-      ? 'http://localhost:5000/api'
-      : 'https://gerador-rx.onrender.com/api',
-});
-```
-
-**✅ Ação:** Já corrigido! O arquivo `src/services/api.js` foi atualizado com a Opção B.
+## 5. Live ⏳ (Coming Soon)
+- Placeholder para experiências em tempo real
+- Funcionalidade para implementação futura
 
 ---
 
-### 🔧 PASSO 2: Configurar Variável de Ambiente no Vercel
+# 🔧 ERROS CORRIGIDOS
 
-**Se optou pela Opção A (variável de ambiente):**
+## Erro 1: CORS Bloqueado
+- **Problema:** Frontend tentando acessar localhost:5000 em produção
+- **Solução:** Configurada variável `VITE_API_URL` no Vercel e lógica condicional no `api.js`
 
-1. Acesse o dashboard do Vercel: https://vercel.com/dashboard
-2. Selecione o projeto `gerador-rx`
-3. Vá em **Settings** → **Environment Variables**
-4. Adicione a variável:
-   - **Name:** `VITE_API_URL`
-   - **Value:** `https://gerador-rx.onrender.com/api`
-   - **Environment:** Production, Preview, Development (marque todos)
-5. Clique em **Save**
-6. **IMPORTANTE:** Faça um novo deploy após adicionar a variável:
-   - Vá em **Deployments**
-   - Clique nos três pontos (...) do último deployment
-   - Selecione **Redeploy**
+## Erro 2: Modelo 'gen-4' não reconhecido
+- **Problema:** Frontend enviava modelo `'gen-4'` que não existia no backend
+- **Solução:** Alterado valor padrão para `'google/veo-3.1-fast'` no App.jsx
 
-**Se optou pela Opção B (lógica condicional):**
-- ✅ Não precisa configurar variável de ambiente
-- ✅ Já funciona automaticamente
+## Erro 3: Header de autenticação incorreto na rota prediction
+- **Problema:** Rota `/prediction/:id` usava `Token` em vez de `Bearer`
+- **Solução:** Corrigido para `Authorization: Bearer ${token}` no replicate.js
+
+## Erro 4: Vídeo/Imagem gerados mas não exibidos
+- **Problema:** Frontend não mostrava o resultado após geração
+- **Solução:** Adicionados estados `generatedVideo` e `generatedImage` com players e botões de download
+
+## Erro 5: Perda de foco no input do Animate
+- **Problema:** Componente Animate estava dentro de DashboardApp causando re-render
+- **Solução:** Movido componente Animate para fora de DashboardApp (mesmo padrão de Generate e Images)
+
+## Erro 6: Erro 413 - Imagem muito grande
+- **Problema:** Imagem em base64 excedia limite do servidor
+- **Solução:** Implementado upload via Cloudinary + compressão de fallback
+
+## Erro 7: Erro 422 - Duração inválida para Veo
+- **Problema:** Google Veo aceita apenas 4, 6, 8 segundos
+- **Solução:** Implementada lógica de duração específica por modelo no backend
 
 ---
 
-### 🔧 PASSO 3: Verificar CORS no Backend
+# 🚀 COMO RODAR O PROJETO LOCALMENTE
 
-**Arquivo:** `backend/server.js`
+## Pré-requisitos
+- Node.js 18+ instalado
+- Git instalado
+- Conta no MongoDB Atlas
+- Conta no Replicate.com
+- Conta no Cloudinary (para upload de imagens)
 
-**Verificar se o CORS está configurado corretamente:**
+---
 
-```javascript
-const cors = require('cors');
+## 📂 PASSO 1: Abrir o Projeto
 
-app.use(cors({
-  origin: [
-    'http://localhost:5173', // Vite dev server
-    'https://gerador-rx.vercel.app' // Produção
-  ],
-  credentials: true
-}));
+1. Abra o **Terminal** ou **PowerShell**
+2. Navegue até a pasta do projeto:
+```bash
+cd C:\Users\david\OneDrive\Desktop\gerador-rx
 ```
 
-**✅ Ação:** Verificar se o backend está permitindo requisições do frontend em produção.
-
 ---
 
-### 🔧 PASSO 4: Verificar Variáveis de Ambiente do Backend
+## 🔙 PASSO 2: Iniciar o Backend
 
-**Arquivo:** `backend/.env` (no Render)
-
-**Verificar se todas as variáveis estão configuradas:**
-
-1. Acesse o dashboard do Render: https://dashboard.render.com
-2. Selecione o serviço `gerador-rx`
-3. Vá em **Environment**
-4. Verifique se estão configuradas:
-   - `MONGODB_URI` - String de conexão do MongoDB Atlas
-   - `JWT_SECRET` - Chave secreta para JWT
-   - `REPLICATE_API_TOKEN` - Token da API do Replicate
-   - `PORT` - Porta (geralmente 5000 ou deixar vazio para usar a padrão do Render)
-
-**✅ Ação:** Verificar e adicionar variáveis faltantes se necessário.
-
----
-
-### 🔧 PASSO 5: Fazer Novo Deploy do Frontend
-
-**Após corrigir o código:**
-
-1. **Commit e push das alterações:**
-   ```bash
-   git add src/services/api.js
-   git commit -m "fix: corrigir URL da API para produção"
-   git push origin main
-   ```
-
-2. **O Vercel fará deploy automaticamente** (se conectado ao GitHub)
-
-3. **Ou faça deploy manual:**
-   - Acesse o dashboard do Vercel
-   - Vá em **Deployments**
-   - Clique em **Redeploy** no último deployment
-
----
-
-### 🔧 PASSO 6: Testar a Conexão
-
-**Após o deploy:**
-
-1. Acesse: https://gerador-rx.vercel.app
-2. Abra o Console do navegador (F12)
-3. Tente fazer login
-4. Verifique se as requisições estão indo para:
-   - ✅ `https://gerador-rx.onrender.com/api/auth/login`
-   - ❌ NÃO deve aparecer `localhost:5000`
-
----
-
-### 🔧 PASSO 7: Verificar Logs do Backend
-
-**No Render:**
-
-1. Acesse o dashboard do Render
-2. Selecione o serviço `gerador-rx`
-3. Vá em **Logs**
-4. Verifique se há erros relacionados a:
-   - CORS
-   - Autenticação
-   - Replicate API
-
----
-
-### 🔧 PASSO 8: Testar Geração de Vídeo/Imagem
-
-**Após corrigir a URL da API:**
-
-1. Faça login no frontend
-2. Tente gerar um vídeo ou imagem
-3. Verifique os logs do backend (Render)
-4. Verifique o console do navegador para erros
-
-**Se ainda houver erro 402 (créditos insuficientes):**
-
-- Verificar se o usuário tem créditos no banco de dados
-- Verificar a lógica de dedução de créditos no backend
-- Verificar se os créditos estão sendo verificados corretamente
-
----
-
-## 🐛 DEBUGGING
-
-### Como verificar se a URL está correta:
-
-**No console do navegador:**
-```javascript
-console.log('API URL:', import.meta.env.VITE_API_URL);
-console.log('Mode:', import.meta.env.MODE);
+1. Abra um terminal e navegue para a pasta backend:
+```bash
+cd backend
 ```
 
-**No código:**
-Adicione logs temporários em `src/services/api.js`:
-```javascript
-console.log('Base URL:', baseURL);
+2. Instale as dependências (apenas na primeira vez ou se adicionar novas):
+```bash
+npm install
 ```
 
-### Como verificar CORS:
+3. Verifique se o arquivo `.env` existe com as variáveis:
+```env
+MONGODB_URI=sua_string_de_conexao_mongodb
+JWT_SECRET=sua_chave_secreta_jwt
+REPLICATE_API_TOKEN=seu_token_replicate
+CLOUDINARY_CLOUD_NAME=seu_cloud_name
+CLOUDINARY_API_KEY=sua_api_key
+CLOUDINARY_API_SECRET=seu_api_secret
+PORT=5000
+```
 
-**No console do navegador, após tentar fazer login:**
-- Se aparecer erro de CORS, o backend não está permitindo a origem
-- Verificar se `https://gerador-rx.vercel.app` está na lista de origens permitidas no backend
+4. Inicie o servidor backend:
+```bash
+npm run dev
+```
 
-### Como verificar variáveis de ambiente:
+5. Você verá a mensagem:
+Servidor rodando na porta 5000
+MongoDB conectado
 
-**No Vercel:**
-- Settings → Environment Variables
-- Verificar se `VITE_API_URL` está configurada
-- Verificar se o valor está correto: `https://gerador-rx.onrender.com/api`
-
-**No Render:**
-- Environment
-- Verificar se todas as variáveis necessárias estão configuradas
-
----
-
-## ✅ CHECKLIST FINAL
-
-- [ ] Corrigir `src/services/api.js` para usar URL de produção
-- [ ] Configurar `VITE_API_URL` no Vercel (se usar variável de ambiente)
-- [ ] Verificar CORS no backend
-- [ ] Verificar variáveis de ambiente no Render
-- [ ] Fazer novo deploy do frontend
-- [ ] Testar login/registro
-- [ ] Testar geração de vídeo/imagem
-- [ ] Verificar logs do backend
-- [ ] Verificar console do navegador
+**⚠️ Mantenha este terminal aberto!**
 
 ---
 
-## 📚 RECURSOS ÚTEIS
+## 🖥️ PASSO 3: Iniciar o Frontend
 
-- **Vercel Dashboard:** https://vercel.com/dashboard
-- **Render Dashboard:** https://dashboard.render.com
-- **MongoDB Atlas:** https://cloud.mongodb.com
-- **Replicate Dashboard:** https://replicate.com/account
+1. Abra um **NOVO terminal** (não feche o do backend)
+
+2. Navegue para a pasta raiz do projeto:
+```bash
+cd C:\Users\david\OneDrive\Desktop\gerador-rx
+```
+
+3. Instale as dependências (apenas na primeira vez):
+```bash
+npm install
+```
+
+4. Inicie o servidor de desenvolvimento:
+```bash
+npm run dev
+```
+
+5. Você verá a mensagem:
+VITE v5.x.x ready in xxx ms
+➜ Local: http://localhost:5173/
+
+6. Abra o navegador em: **http://localhost:5173**
 
 ---
 
-## 🎯 PRÓXIMOS PASSOS APÓS CORRIGIR
+## 🔄 PASSO 4: Fluxo Completo de Inicialização
 
-1. **Melhorar tratamento de erros:**
-   - Mensagens de erro mais amigáveis
-   - Feedback visual melhor
+### Resumo Rápido (Checklist Diário):
+```bash
+# Terminal 1 - Backend
+cd C:\Users\david\OneDrive\Desktop\gerador-rx\backend
+npm run dev
 
-2. **Otimizar geração:**
-   - Polling mais eficiente
-   - Loading states melhores
+# Terminal 2 - Frontend (novo terminal)
+cd C:\Users\david\OneDrive\Desktop\gerador-rx
+npm run dev
 
-3. **Adicionar features:**
-   - Histórico de gerações
-   - Download de resultados
-   - Compartilhamento
+# Abrir navegador em http://localhost:5173
+```
 
 ---
 
-**Última atualização:** 2025-01-XX
+# 📦 DEPLOY EM PRODUÇÃO
+
+## Frontend (Vercel)
+
+1. Acesse: https://vercel.com/dashboard
+2. O deploy é **automático** ao fazer `git push origin main`
+3. Variáveis de ambiente configuradas:
+   - `VITE_API_URL` = `https://gerador-rx.onrender.com/api`
+
+### Deploy Manual:
+```bash
+git add .
+git commit -m "sua mensagem"
+git push origin main
+```
+
+## Backend (Render)
+
+1. Acesse: https://dashboard.render.com
+2. O deploy é **automático** ao fazer push na pasta backend
+3. Variáveis de ambiente configuradas no Render:
+   - `MONGODB_URI`
+   - `JWT_SECRET`
+   - `REPLICATE_API_TOKEN`
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET`
+
+### Deploy Manual do Backend:
+```bash
+cd backend
+git add .
+git commit -m "sua mensagem"
+git push origin main
+```
+
+---
+
+# 📁 ESTRUTURA DO PROJETO
+gerador-rx/
+├── src/                      # Frontend React
+│   ├── components/           # Componentes React
+│   │   ├── Login.jsx
+│   │   ├── Register.jsx
+│   │   └── ProtectedRoute.jsx
+│   ├── context/
+│   │   └── AuthContext.jsx   # Contexto de autenticação
+│   ├── services/
+│   │   └── api.js            # Configuração Axios e funções API
+│   ├── App.jsx               # Componente principal
+│   └── index.jsx             # Entrada da aplicação
+├── backend/                  # Backend Node.js
+│   ├── models/               # Modelos MongoDB
+│   │   ├── User.js
+│   │   └── Session.js
+│   ├── routes/               # Rotas da API
+│   │   ├── auth.js           # Autenticação
+│   │   └── replicate.js      # Geração de conteúdo
+│   ├── middleware/
+│   │   └── auth.js           # Middleware JWT
+│   └── server.js             # Entrada do servidor
+├── package.json              # Dependências frontend
+├── vite.config.js            # Configuração Vite
+└── GUIA-DEPLOY.md            # Este arquivo
+
+---
+
+# 🔑 CREDENCIAIS E ACESSOS
+
+## Serviços Externos
+
+| Serviço | URL | Função |
+|---------|-----|--------|
+| **Vercel** | https://vercel.com/dashboard | Deploy Frontend |
+| **Render** | https://dashboard.render.com | Deploy Backend |
+| **MongoDB Atlas** | https://cloud.mongodb.com | Banco de Dados |
+| **Replicate** | https://replicate.com/account | API de IA |
+| **Cloudinary** | https://cloudinary.com/console | Upload de Imagens |
+
+---
+
+# 🐛 TROUBLESHOOTING
+
+## Erro: "CORS blocked"
+- Verifique se o backend está rodando
+- Verifique se `VITE_API_URL` está configurado no Vercel
+- Faça redeploy no Vercel
+
+## Erro: "401 Unauthorized"
+- Token JWT expirado
+- Faça logout e login novamente
+
+## Erro: "402 Insufficient credit"
+- Adicione créditos no Replicate: https://replicate.com/account/billing
+
+## Erro: "500 Internal Server Error"
+- Verifique os logs do Render
+- Verifique se todas as variáveis de ambiente estão configuradas
+
+## Erro: "413 Payload Too Large"
+- Imagem muito grande
+- Use imagens menores que 5MB
+
+## Vídeo/Imagem não aparece após geração
+- Verifique o console do navegador (F12)
+- Verifique os logs do Render
+
+---
+
+# 📞 COMANDOS ÚTEIS
+```bash
+# Ver status do git
+git status
+
+# Ver logs do git
+git log --oneline
+
+# Atualizar projeto com última versão
+git pull origin main
+
+# Ver dependências desatualizadas
+npm outdated
+
+# Limpar cache do npm
+npm cache clean --force
+
+# Reinstalar dependências
+rm -rf node_modules
+npm install
+```
+
+---
+
+# 📝 NOTAS IMPORTANTES
+
+1. **Render pode "dormir"**: O plano gratuito do Render coloca o servidor em sleep após inatividade. A primeira requisição pode demorar ~30 segundos.
+
+2. **Créditos Replicate**: Monitore seus créditos em https://replicate.com/account/billing
+
+3. **Variáveis de Ambiente**: Nunca commite arquivos `.env` no Git. Eles contêm credenciais sensíveis.
+
+4. **Backup**: Faça backup regular do banco de dados MongoDB Atlas.
+
+---
+
+# ✅ CHECKLIST DE VERIFICAÇÃO
+
+Antes de considerar o projeto funcionando, verifique:
+
+- [ ] Backend rodando (local ou Render)
+- [ ] Frontend rodando (local ou Vercel)
+- [ ] Login/Registro funcionando
+- [ ] Geração de vídeo funcionando
+- [ ] Geração de imagem funcionando
+- [ ] Animação de personagem funcionando
+- [ ] Download de arquivos funcionando
+- [ ] Créditos sendo deduzidos corretamente
+
+---
