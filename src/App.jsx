@@ -638,9 +638,6 @@ const DashboardApp = ({
   searchQuery,
   setSearchQuery,
   user,
-  filteredAssets,
-  toggleFavorite,
-  deleteAsset,
   handleUploadAsset,
   isUploadingAsset,
   workflows,
@@ -785,157 +782,6 @@ const DashboardApp = ({
     </div>
   );
   
-  const Assets = () => (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Assets Library</h1>
-        <div className="flex items-center space-x-4">
-          <div className="bg-blue-50 px-4 py-2 rounded-full flex items-center space-x-2">
-            <Star className="w-4 h-4 text-yellow-500" />
-            <span className="text-sm font-medium">{credits} credits</span>
-          </div>
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
-            Upgrade
-          </button>
-        </div>
-      </div>
-      
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200 mb-6">
-        <div className="flex space-x-8">
-          <button 
-            className="pb-4 border-b-2 border-indigo-600 font-medium text-indigo-600"
-            onClick={() => setActiveTab('assets-private')}
-          >
-            Private
-          </button>
-          <button 
-            className="pb-4 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            onClick={() => setActiveTab('assets-shared')}
-          >
-            Shared
-          </button>
-          <button 
-            className="pb-4 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            onClick={() => setActiveTab('assets-favorites')}
-          >
-            Favorited
-          </button>
-        </div>
-      </div>
-      
-      {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search for tools, assets and projects..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-        <div className="flex space-x-2">
-          <button className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-            <Filter className="w-4 h-4 inline mr-2" />
-            Filter
-          </button>
-          <button className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-            <SortAsc className="w-4 h-4 inline mr-2" />
-            Sort
-          </button>
-          <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-            <Plus className="w-4 h-4 inline mr-2" />
-            New Folder
-          </button>
-          <label className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 cursor-pointer inline-flex items-center">
-            <Upload className="w-4 h-4 inline mr-2" />
-            Upload
-            <input
-              type="file"
-              onChange={handleUploadAsset}
-              disabled={isUploadingAsset}
-              className="hidden"
-            />
-          </label>
-        </div>
-      </div>
-      
-      {/* Asset Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filteredAssets.map(asset => (
-          <div key={asset.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-            <div className="h-32 bg-gray-100 flex items-center justify-center">
-              {asset.type === 'image' && <Image className="w-12 h-12 text-gray-400" />}
-              {asset.type === 'video' && <Video className="w-12 h-12 text-gray-400" />}
-              {asset.type === 'audio' && <Mic className="w-12 h-12 text-gray-400" />}
-            </div>
-            <div className="p-4">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold text-gray-800 truncate">{asset.name}</h3>
-                <button 
-                  onClick={() => toggleFavorite(asset.id)}
-                  className={`p-1 rounded-full ${asset.favorite ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}`}
-                >
-                  <Heart className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
-                  {asset.type}
-                </span>
-                <span className="text-xs text-gray-500">{asset.size}</span>
-              </div>
-              <div className="flex flex-wrap gap-1 mb-2">
-                {asset.tags.slice(0, 2).map(tag => (
-                  <span key={tag} className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded">
-                    {tag}
-                  </span>
-                ))}
-                {asset.tags.length > 2 && (
-                  <span className="text-xs text-gray-500">+{asset.tags.length - 2}</span>
-                )}
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500">{asset.date}</span>
-                <div className="flex space-x-1">
-                  <button className="p-1 text-gray-500 hover:text-gray-700">
-                    <Eye className="w-4 h-4" />
-                  </button>
-                  <button className="p-1 text-gray-500 hover:text-gray-700">
-                    <Download className="w-4 h-4" />
-                  </button>
-                  <button className="p-1 text-gray-500 hover:text-gray-700">
-                    <Share2 className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => deleteAsset(asset.id)}
-                    className="p-1 text-gray-500 hover:text-red-600"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      {filteredAssets.length === 0 && (
-        <div className="text-center py-12">
-          <Folder className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 mb-2">You've reached the end of your asset library.</p>
-          <button className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-            Upload New Asset
-          </button>
-        </div>
-      )}
-    </div>
-  );
-  
   const Workflows = () => (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -1075,116 +921,6 @@ const DashboardApp = ({
     </div>
   );
   
-  const Watch = () => (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Watch</h1>
-        <div className="flex items-center space-x-4">
-          <div className="bg-blue-50 px-4 py-2 rounded-full flex items-center space-x-2">
-            <Star className="w-4 h-4 text-yellow-500" />
-            <span className="text-sm font-medium">{credits} credits</span>
-          </div>
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
-            Upgrade
-          </button>
-        </div>
-      </div>
-      
-      {/* Channel Navigation */}
-      <div className="border-b border-gray-200 mb-6">
-        <div className="flex space-x-8">
-          <button 
-            className="pb-4 border-b-2 border-indigo-600 font-medium text-indigo-600"
-            onClick={() => setActiveTab('watch-submitted')}
-          >
-            SUBMITTED
-          </button>
-          <button 
-            className="pb-4 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            onClick={() => setActiveTab('watch-festival')}
-          >
-            FESTIVAL
-          </button>
-          <button 
-            className="pb-4 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            onClick={() => setActiveTab('watch-aifilm')}
-          >
-            AIFILM
-          </button>
-        </div>
-      </div>
-      
-      {/* Featured Content */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-800">AIFILM Festival 2024</h2>
-          <button className="text-indigo-600 hover:text-indigo-700 font-medium">
-            View All â†’
-          </button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="border rounded-lg overflow-hidden">
-            <img src="https://placehold.co/600x300/10B981/FFFFFF?text=AIFILM+Festival" alt="AIFILM Festival" className="w-full h-48 object-cover" />
-            <div className="p-4">
-              <h3 className="font-semibold text-gray-800 mb-2">Get Me Out</h3>
-              <p className="text-sm text-gray-600 mb-2">by Daniel Antebi</p>
-              <div className="flex items-center space-x-2">
-                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                  GRAND PRIX 2024
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="border rounded-lg overflow-hidden">
-            <img src="https://placehold.co/600x300/4F46E5/FFFFFF?text=SUBMITTED+BUMPERS" alt="Submitted Bumpers" className="w-full h-48 object-cover" />
-            <div className="p-4">
-              <h3 className="font-semibold text-gray-800 mb-2">Submitted Bumpers</h3>
-              <p className="text-sm text-gray-600 mb-2">Community submissions</p>
-              <div className="flex items-center space-x-2">
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                  FEATURED
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Categories */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">All Channels</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          <div className="border rounded-lg p-4 hover:bg-gray-50">
-            <h3 className="font-semibold text-gray-800 mb-2">AIFILM</h3>
-            <p className="text-sm text-gray-600">AI-generated films and animations</p>
-          </div>
-          <div className="border rounded-lg p-4 hover:bg-gray-50">
-            <h3 className="font-semibold text-gray-800 mb-2">FESTIVAL</h3>
-            <p className="text-sm text-gray-600">Award-winning AI content</p>
-          </div>
-          <div className="border rounded-lg p-4 hover:bg-gray-50">
-            <h3 className="font-semibold text-gray-800 mb-2">SUBMITTED</h3>
-            <p className="text-sm text-gray-600">Community submissions</p>
-          </div>
-          <div className="border rounded-lg p-4 hover:bg-gray-50">
-            <h3 className="font-semibold text-gray-800 mb-2">EDUCATION</h3>
-            <p className="text-sm text-gray-600">Tutorials and educational content</p>
-          </div>
-          <div className="border rounded-lg p-4 hover:bg-gray-50">
-            <h3 className="font-semibold text-gray-800 mb-2">TECHNICAL</h3>
-            <p className="text-sm text-gray-600">Technical demonstrations</p>
-          </div>
-          <div className="border rounded-lg p-4 hover:bg-gray-50">
-            <h3 className="font-semibold text-gray-800 mb-2">EXPERIMENTAL</h3>
-            <p className="text-sm text-gray-600">Experimental AI creations</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-  
   const Sidebar = () => (
     <div className={`fixed left-0 top-0 h-screen bg-white border-r border-gray-200 z-50 transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'}`}>
       <div className="p-6">
@@ -1228,13 +964,6 @@ const DashboardApp = ({
             Generate Images
           </button>
           <button 
-            onClick={() => setActiveTab('assets-private')} 
-            className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab.startsWith('assets') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'}`}
-          >
-            <Folder className="w-5 h-5 mr-3" />
-            Assets Library
-          </button>
-          <button 
             onClick={() => setActiveTab('workflows')} 
             className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'workflows' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'}`}
           >
@@ -1247,13 +976,6 @@ const DashboardApp = ({
           >
             <Camera className="w-5 h-5 mr-3" />
             Live
-          </button>
-          <button 
-            onClick={() => setActiveTab('watch')} 
-            className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'watch' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'}`}
-          >
-            <Play className="w-5 h-5 mr-3" />
-            Watch
           </button>
         </nav>
         
@@ -1410,12 +1132,8 @@ const DashboardApp = ({
               setGeneratedImage={setGeneratedImage}
             />
           )}
-          {activeTab === 'assets-private' && <Assets />}
-          {activeTab === 'assets-shared' && <Assets />}
-          {activeTab === 'assets-favorites' && <Assets />}
           {activeTab === 'workflows' && <Workflows />}
           {activeTab === 'live' && <Live />}
-          {activeTab === 'watch' && <Watch />}
         </main>
       </div>
     </div>
@@ -1779,21 +1497,6 @@ const App = () => {
     }
   };
   
-  const toggleFavorite = (assetId) => {
-    setAssets(assets.map(asset => 
-      asset.id === assetId ? { ...asset, favorite: !asset.favorite } : asset
-    ));
-  };
-  
-  const deleteAsset = (assetId) => {
-    setAssets(assets.filter(asset => asset.id !== assetId));
-  };
-  
-  const filteredAssets = assets.filter(asset => 
-    asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    asset.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-
   return (
     <>
       <Routes>
@@ -1823,9 +1526,6 @@ const App = () => {
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 user={user}
-                filteredAssets={filteredAssets}
-                toggleFavorite={toggleFavorite}
-                deleteAsset={deleteAsset}
                 handleUploadAsset={handleUploadAsset}
                 isUploadingAsset={isUploadingAsset}
                 workflows={workflows}
@@ -1878,9 +1578,6 @@ const App = () => {
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 user={user}
-                filteredAssets={filteredAssets}
-                toggleFavorite={toggleFavorite}
-                deleteAsset={deleteAsset}
                 handleUploadAsset={handleUploadAsset}
                 isUploadingAsset={isUploadingAsset}
                 workflows={workflows}
