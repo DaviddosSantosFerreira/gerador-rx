@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Search, Settings, User, Plus, Play, Image, Video, Clock, Star, Folder, Upload, Download, Trash2, Share2, Heart, Eye, Edit, MoreVertical, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Check, X, Home, Grid, List, FileText, Camera, Mic, Send, MessageSquare, Users, Lock, Globe, Mail, Phone, Calendar, Tag, Filter, SortAsc, SortDesc, RefreshCw, Save, Undo, Redo, ZoomIn, ZoomOut, RotateCcw, RotateCw, Crop, Scissors, Paintbrush, Palette, Type, AlignLeft, AlignCenter, AlignRight, AlignJustify, Bold, Italic, Underline, Strikethrough, Link, Unlink, Code, Quote, ListOrdered, Table, BarChart, LineChart, PieChart, Bell, AlertCircle, Info, HelpCircle, Shield, Key, Unlock, UserPlus, UserMinus, UserCheck, UserX, UserCircle, UserSquare } from 'lucide-react';
-import { generateVideo, generateImage, getPrediction, getSessions, uploadAsset, getAssets } from './services/api';
+import { generateVideo, generateImage, getPrediction, getSessions, uploadAsset, getAssets, animateCharacter } from './services/api';
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
@@ -425,7 +425,20 @@ const DashboardApp = ({
   generatedVideo,
   setGeneratedVideo,
   generatedImage,
-  setGeneratedImage
+  setGeneratedImage,
+  animateImagePreview,
+  setAnimateImagePreview,
+  animatePrompt,
+  setAnimatePrompt,
+  animateModel,
+  setAnimateModel,
+  animateDuration,
+  setAnimateDuration,
+  isAnimating,
+  animatedVideo,
+  setAnimatedVideo,
+  handleAnimateCharacter,
+  handleAnimateImageUpload
 }) => {
   const Dashboard = () => (
     <div className="p-6">
@@ -563,54 +576,98 @@ const DashboardApp = ({
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Character Selection */}
+        {/* Animation Controls */}
         <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Select Character</h2>
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Animate Your Character</h2>
           
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">Upload Character Image</label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-indigo-500 transition-colors">
-              <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-500">Drag and drop or click to upload</p>
-              <button className="mt-2 text-xs text-indigo-600 hover:text-indigo-700">
-                Browse files
-              </button>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-green-500 transition-colors">
+              {animateImagePreview ? (
+                <div className="relative">
+                  <img src={animateImagePreview} alt="Preview" className="max-h-32 mx-auto rounded" />
+                  <button 
+                    onClick={() => { setAnimateImagePreview(null); setAnimateImageFile(null); }}
+                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 text-xs"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">Drag and drop or click to upload</p>
+                </>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAnimateImageUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                style={{ position: 'relative' }}
+              />
+              {!animateImagePreview && (
+                <label className="mt-2 text-xs text-green-600 hover:text-green-700 cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAnimateImageUpload}
+                    className="hidden"
+                  />
+                  Browse files
+                </label>
+              )}
             </div>
           </div>
-          
+
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Driving Performance</label>
-            <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-              <option value="">Select driving performance</option>
-              <option value="walk">Walk</option>
-              <option value="run">Run</option>
-              <option value="dance">Dance</option>
-              <option value="talk">Talk</option>
-            </select>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Animation Prompt (optional)</label>
+            <textarea
+              value={animatePrompt}
+              onChange={(e) => setAnimatePrompt(e.target.value)}
+              placeholder="Describe how you want the character to move..."
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              rows={3}
+            />
           </div>
           
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Animation Style</label>
-            <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-              <option value="realistic">Realistic</option>
-              <option value="cartoon">Cartoon</option>
-              <option value="anime">Anime</option>
-              <option value="stylized">Stylized</option>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Model</label>
+            <select
+              value={animateModel}
+              onChange={(e) => setAnimateModel(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+              <option value="veo-3.1-fast">Google Veo 3.1 Fast (Recomendado)</option>
+              <option value="veo-3.1">Google Veo 3.1 (Alta Qualidade)</option>
+              <option value="veo-3">Google Veo 3 (Com Áudio)</option>
+              <option value="kling-v2.5-turbo-pro">Kling V2.5 Turbo Pro (Motion Suave)</option>
+              <option value="pixverse-v5">PixVerse V5 (Anime/Cartoon)</option>
             </select>
           </div>
           
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">Duration</label>
-            <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <select
+              value={animateDuration}
+              onChange={(e) => setAnimateDuration(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
               <option value="5s">5 seconds</option>
               <option value="10s">10 seconds</option>
-              <option value="15s">15 seconds</option>
-              <option value="30s">30 seconds</option>
             </select>
           </div>
           
-          <button className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors">
-            Animate Character
+          <button
+            onClick={handleAnimateCharacter}
+            disabled={isAnimating || !animateImagePreview}
+            className={`w-full py-3 rounded-lg font-medium transition-colors ${
+              isAnimating || !animateImagePreview
+                ? 'bg-gray-300 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700 text-white'
+            }`}
+          >
+            {isAnimating ? 'Animating...' : 'Animate Character (10 credits)'}
           </button>
         </div>
         
@@ -619,48 +676,82 @@ const DashboardApp = ({
           <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Preview</h2>
             
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="aspect-video bg-black rounded-lg mb-4 flex items-center justify-center">
-                <div className="text-center">
-                  <Play className="w-12 h-12 text-white mx-auto mb-2 opacity-50" />
-                  <p className="text-white text-sm">Upload a character image to preview animation</p>
+            {isAnimating ? (
+              <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
+                <p className="text-gray-600">Your animation is being generated...</p>
+                <p className="text-sm text-gray-500 mt-2">This may take 1-3 minutes</p>
+              </div>
+            ) : animatedVideo ? (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="aspect-video bg-black rounded-lg mb-4 overflow-hidden">
+                  <video 
+                    src={animatedVideo} 
+                    controls 
+                    autoPlay 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div className="flex gap-2 mb-4">
+                  <a 
+                    href={animatedVideo} 
+                    download 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg text-center hover:bg-green-700"
+                  >
+                    Download Animation
+                  </a>
+                  <button 
+                    onClick={() => setAnimatedVideo(null)}
+                    className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                  >
+                    Animate New
+                  </button>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white p-3 rounded border">
-                  <h3 className="font-medium text-gray-800 mb-2">Character:</h3>
-                  <p className="text-gray-600 text-sm">No character selected</p>
+            ) : animateImagePreview ? (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="aspect-video bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
+                  <img src={animateImagePreview} alt="Character" className="max-h-full max-w-full object-contain rounded" />
                 </div>
                 <div className="bg-white p-3 rounded border">
-                  <h3 className="font-medium text-gray-800 mb-2">Performance:</h3>
-                  <p className="text-gray-600 text-sm">No performance selected</p>
+                  <h3 className="font-medium text-gray-800 mb-2">Ready to animate!</h3>
+                  <p className="text-gray-600 text-sm">Click "Animate Character" to bring your image to life</p>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg">
+                <Upload className="w-12 h-12 text-gray-400 mb-4" />
+                <p className="text-gray-600 text-center">Upload a character image to animate</p>
+              </div>
+            )}
           </div>
           
           {/* Recent Animations */}
           <div className="mt-6 bg-white rounded-xl shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Animations</h2>
             <div className="space-y-4">
-              {sessions.filter(s => s.type === 'image').slice(0, 3).map(session => (
-                <div key={session.id} className="flex items-center p-3 border rounded-lg hover:bg-gray-50">
-                  <img src={session.thumbnail} alt={session.name} className="w-16 h-10 object-cover rounded mr-3" />
+              {sessions.filter(s => s.model && s.model.includes('kling') || s.model && s.model.includes('veo') || s.model && s.model.includes('pixverse')).slice(0, 3).map(session => (
+                <div key={session._id || session.id} className="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                  <div className="w-16 h-10 bg-gray-200 rounded mr-3 flex items-center justify-center">
+                    <Play className="w-6 h-6 text-gray-500" />
+                  </div>
                   <div className="flex-grow">
                     <h3 className="font-medium text-gray-800">{session.name}</h3>
-                    <p className="text-sm text-gray-500">{session.date}</p>
+                    <p className="text-sm text-gray-500">{session.model}</p>
                   </div>
                   <div className="flex space-x-2">
-                    <button className="p-2 text-gray-500 hover:text-gray-700">
-                      <Eye className="w-5 h-5" />
-                    </button>
-                    <button className="p-2 text-gray-500 hover:text-gray-700">
-                      <Download className="w-5 h-5" />
-                    </button>
-                    <button className="p-2 text-gray-500 hover:text-gray-700">
-                      <Share2 className="w-5 h-5" />
-                    </button>
+                    {session.outputUrl && (
+                      <a href={session.outputUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-500 hover:text-gray-700">
+                        <Eye className="w-5 h-5" />
+                      </a>
+                    )}
+                    {session.outputUrl && (
+                      <a href={session.outputUrl} download className="p-2 text-gray-500 hover:text-gray-700">
+                        <Download className="w-5 h-5" />
+                      </a>
+                    )}
                   </div>
                 </div>
               ))}
@@ -1301,6 +1392,14 @@ const App = () => {
   const [imageModel, setImageModel] = useState('google/nano-banana-pro');
   const [generatedVideo, setGeneratedVideo] = useState(null);
   const [generatedImage, setGeneratedImage] = useState(null);
+  const [animateImageUrl, setAnimateImageUrl] = useState('');
+  const [animatePrompt, setAnimatePrompt] = useState('');
+  const [animateModel, setAnimateModel] = useState('veo-3.1-fast');
+  const [animateDuration, setAnimateDuration] = useState('5s');
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [animatedVideo, setAnimatedVideo] = useState(null);
+  const [animateImageFile, setAnimateImageFile] = useState(null);
+  const [animateImagePreview, setAnimateImagePreview] = useState(null);
   const [credits, setCredits] = useState(125);
   const [user, setUser] = useState({ name: 'David', plan: 'Personal - Free' });
   const [sessions, setSessions] = useState([]);
@@ -1499,6 +1598,68 @@ const App = () => {
     }
   };
   
+  const handleAnimateCharacter = async () => {
+    if (!animateImagePreview) {
+      alert('Por favor, faça upload de uma imagem primeiro.');
+      return;
+    }
+
+    try {
+      setIsAnimating(true);
+
+      const response = await animateCharacter({
+        imageUrl: animateImagePreview,
+        prompt: animatePrompt,
+        model: animateModel,
+        duration: animateDuration
+      });
+
+      const { predictionId } = response.data;
+
+      // Polling para verificar status
+      const checkStatus = async () => {
+        try {
+          const statusResponse = await getPrediction(predictionId);
+          const status = statusResponse.data.status;
+
+          if (status === 'succeeded') {
+            setIsAnimating(false);
+            setAnimatedVideo(statusResponse.data.output);
+            alert('Animação gerada com sucesso!');
+          } else if (status === 'failed') {
+            setIsAnimating(false);
+            alert('Erro ao gerar animação. Tente novamente.');
+          } else {
+            setTimeout(checkStatus, 3000);
+          }
+        } catch (error) {
+          console.error('Erro ao verificar status:', error);
+          setIsAnimating(false);
+          alert('Erro ao verificar status da animação.');
+        }
+      };
+
+      setTimeout(checkStatus, 2000);
+
+    } catch (error) {
+      console.error('Erro ao animar:', error);
+      setIsAnimating(false);
+      alert(error.response?.data?.message || 'Erro ao animar personagem.');
+    }
+  };
+
+  const handleAnimateImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setAnimateImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAnimateImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleUploadAsset = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -1588,6 +1749,19 @@ const App = () => {
                 setGeneratedVideo={setGeneratedVideo}
                 generatedImage={generatedImage}
                 setGeneratedImage={setGeneratedImage}
+                animateImagePreview={animateImagePreview}
+                setAnimateImagePreview={setAnimateImagePreview}
+                animatePrompt={animatePrompt}
+                setAnimatePrompt={setAnimatePrompt}
+                animateModel={animateModel}
+                setAnimateModel={setAnimateModel}
+                animateDuration={animateDuration}
+                setAnimateDuration={setAnimateDuration}
+                isAnimating={isAnimating}
+                animatedVideo={animatedVideo}
+                setAnimatedVideo={setAnimatedVideo}
+                handleAnimateCharacter={handleAnimateCharacter}
+                handleAnimateImageUpload={handleAnimateImageUpload}
               />
             </ProtectedRoute>
           }
@@ -1628,6 +1802,19 @@ const App = () => {
                 setGeneratedVideo={setGeneratedVideo}
                 generatedImage={generatedImage}
                 setGeneratedImage={setGeneratedImage}
+                animateImagePreview={animateImagePreview}
+                setAnimateImagePreview={setAnimateImagePreview}
+                animatePrompt={animatePrompt}
+                setAnimatePrompt={setAnimatePrompt}
+                animateModel={animateModel}
+                setAnimateModel={setAnimateModel}
+                animateDuration={animateDuration}
+                setAnimateDuration={setAnimateDuration}
+                isAnimating={isAnimating}
+                animatedVideo={animatedVideo}
+                setAnimatedVideo={setAnimatedVideo}
+                handleAnimateCharacter={handleAnimateCharacter}
+                handleAnimateImageUpload={handleAnimateImageUpload}
               />
             </ProtectedRoute>
           }

@@ -67,6 +67,10 @@ export const generateImage = (prompt, model) =>
 export const getPrediction = (predictionId) =>
   api.get(`/replicate/prediction/${predictionId}`);
 
+// ANIMATE CHARACTER
+export const animateCharacter = (data) =>
+  api.post('/replicate/animate-character', data);
+
 // AUTH
 export const login = (email, password) =>
   api.post('/auth/login', { email, password });
