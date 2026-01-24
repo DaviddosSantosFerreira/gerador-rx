@@ -442,8 +442,9 @@ router.post('/lipsync-with-tts', auth, async (req, res) => {
         input: {
           video: videoUrl,
           audio: audioUrl,
-          sync_mode: syncMode || 'loop',
-          temperature: 0.5
+          sync_mode: syncMode || 'cut_off',
+          temperature: 0.8,
+          active_speaker: true
         }
       },
       {
