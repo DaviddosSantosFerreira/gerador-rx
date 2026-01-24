@@ -512,7 +512,7 @@ router.post('/edit-image', auth, async (req, res) => {
     if (model === 'ideogram-character') {
       inputParams = {
         prompt: prompt,
-        image: characterImage,
+        character_reference_image: characterImage,
         style: 'realistic'
       };
     } else if (model === 'flux-fill-pro') {
