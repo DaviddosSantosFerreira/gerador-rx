@@ -396,7 +396,7 @@ router.post('/lipsync-with-tts', auth, async (req, res) => {
         headers: {
           Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
           'Content-Type': 'application/json',
-          'Prefer': 'wait=120'
+          'Prefer': 'wait=60'
         }
       }
     );
