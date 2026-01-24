@@ -261,5 +261,225 @@ router.post('/animate-character', auth, async (req, res) => {
   }
 });
 
+// Gerar áudio com MiniMax TTS
+router.post('/generate-audio', auth, async (req, res) => {
+  const { text, voice, emotion, language, speed } = req.body;
+  const userId = req.user.id;
+
+  console.log('=== GENERATE AUDIO (TTS) ===');
+  console.log('User ID:', userId);
+  console.log('Text:', text?.substring(0, 50) + '...');
+  console.log('Voice:', voice);
+  console.log('Emotion:', emotion);
+  console.log('Language:', language);
+
+  try {
+    const response = await axios.post(
+      'https://api.replicate.com/v1/models/minimax/speech-02-hd/predictions',
+      {
+        input: {
+          text: text,
+          voice_id: voice || 'Friendly_Person',
+          emotion: emotion || 'auto',
+          language_boost: language || 'Portuguese',
+          speed: speed || 1,
+          audio_format: 'mp3'
+        }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'wait=60'
+        }
+      }
+    );
+
+    console.log('TTS Response Status:', response.data.status);
+    
+    res.json({ 
+      predictionId: response.data.id,
+      status: response.data.status,
+      output: response.data.output
+    });
+  } catch (error) {
+    console.error('Erro no TTS:', error.response?.data || error.message);
+    res.status(500).json({ message: error.response?.data?.detail || error.message });
+  }
+});
+
+// Gerar Lipsync (vídeo + áudio)
+router.post('/generate-lipsync', auth, async (req, res) => {
+  const { videoUrl, audioUrl, syncMode } = req.body;
+  const userId = req.user.id;
+
+  console.log('=== GENERATE LIPSYNC ===');
+  console.log('User ID:', userId);
+  console.log('Video URL:', videoUrl);
+  console.log('Audio URL:', audioUrl);
+  console.log('Sync Mode:', syncMode);
+
+  try {
+    const response = await axios.post(
+      'https://api.replicate.com/v1/models/sync/lipsync-2/predictions',
+      {
+        input: {
+          video: videoUrl,
+          audio: audioUrl,
+          sync_mode: syncMode || 'loop',
+          temperature: 0.5
+        }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log('Lipsync Response Status:', response.data.status);
+    console.log('Prediction ID:', response.data.id);
+
+    // Criar sessão no banco
+    const session = new Session({
+      userId,
+      name: `Lipsync Video ${Date.now()}`,
+      type: 'video',
+      prompt: 'Lipsync generation',
+      model: 'sync/lipsync-2',
+      status: response.data.status === 'succeeded' ? 'completed' : 'generating',
+      outputUrl: response.data.output || null,
+      predictionId: response.data.id,
+    });
+    await session.save();
+
+    res.json({ 
+      predictionId: response.data.id, 
+      sessionId: session._id,
+      status: response.data.status,
+      output: response.data.output
+    });
+  } catch (error) {
+    console.error('Erro no Lipsync:', error.response?.data || error.message);
+    res.status(500).json({ message: error.response?.data?.detail || error.message });
+  }
+});
+
+// Lipsync completo: Texto → Áudio → Lipsync (fluxo combinado)
+router.post('/lipsync-with-tts', auth, async (req, res) => {
+  const { videoUrl, text, voice, emotion, language, speed, syncMode } = req.body;
+  const userId = req.user.id;
+
+  console.log('=== LIPSYNC WITH TTS (COMBINED FLOW) ===');
+  console.log('User ID:', userId);
+  console.log('Video URL:', videoUrl);
+  console.log('Text:', text?.substring(0, 50) + '...');
+  console.log('Voice:', voice);
+
+  try {
+    // ETAPA 1: Gerar áudio com MiniMax TTS
+    console.log('Etapa 1: Gerando áudio...');
+    const ttsResponse = await axios.post(
+      'https://api.replicate.com/v1/models/minimax/speech-02-hd/predictions',
+      {
+        input: {
+          text: text,
+          voice_id: voice || 'Friendly_Person',
+          emotion: emotion || 'auto',
+          language_boost: language || 'Portuguese',
+          speed: speed || 1,
+          audio_format: 'mp3'
+        }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'wait=120'
+        }
+      }
+    );
+
+    let audioUrl = ttsResponse.data.output;
+    let ttsPredictionId = ttsResponse.data.id;
+
+    // Se ainda não completou, fazer polling
+    if (!audioUrl && ttsResponse.data.status !== 'succeeded') {
+      console.log('TTS ainda processando, fazendo polling...');
+      let attempts = 0;
+      while (!audioUrl && attempts < 30) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const statusResponse = await axios.get(
+          `https://api.replicate.com/v1/predictions/${ttsPredictionId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`
+            }
+          }
+        );
+        if (statusResponse.data.status === 'succeeded') {
+          audioUrl = statusResponse.data.output;
+          break;
+        } else if (statusResponse.data.status === 'failed') {
+          throw new Error('Falha ao gerar áudio');
+        }
+        attempts++;
+      }
+    }
+
+    if (!audioUrl) {
+      throw new Error('Timeout ao gerar áudio');
+    }
+
+    console.log('Áudio gerado:', audioUrl);
+
+    // ETAPA 2: Gerar Lipsync
+    console.log('Etapa 2: Gerando lipsync...');
+    const lipsyncResponse = await axios.post(
+      'https://api.replicate.com/v1/models/sync/lipsync-2/predictions',
+      {
+        input: {
+          video: videoUrl,
+          audio: audioUrl,
+          sync_mode: syncMode || 'loop',
+          temperature: 0.5
+        }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log('Lipsync iniciado:', lipsyncResponse.data.id);
+
+    // Criar sessão no banco
+    const session = new Session({
+      userId,
+      name: `Lipsync TTS ${Date.now()}`,
+      type: 'video',
+      prompt: text?.substring(0, 100),
+      model: 'sync/lipsync-2 + minimax/speech-02-hd',
+      status: 'generating',
+      outputUrl: null,
+      predictionId: lipsyncResponse.data.id,
+    });
+    await session.save();
+
+    res.json({ 
+      predictionId: lipsyncResponse.data.id, 
+      sessionId: session._id,
+      audioUrl: audioUrl,
+      status: lipsyncResponse.data.status
+    });
+  } catch (error) {
+    console.error('Erro no Lipsync with TTS:', error.response?.data || error.message);
+    res.status(500).json({ message: error.response?.data?.detail || error.message });
+  }
+});
+
 module.exports = router;
 
