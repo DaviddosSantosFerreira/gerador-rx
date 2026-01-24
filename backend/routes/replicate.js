@@ -482,5 +482,105 @@ router.post('/lipsync-with-tts', auth, async (req, res) => {
   }
 });
 
+// Image Editor - Combinar/Editar imagens
+router.post('/edit-image', auth, async (req, res) => {
+  const { backgroundImage, characterImage, prompt, model } = req.body;
+  const userId = req.user.id;
+
+  // Mapear modelos
+  const modelMap = {
+    'ideogram-character': 'ideogram-ai/ideogram-character',
+    'flux-fill-pro': 'black-forest-labs/flux-fill-pro',
+    'sd-inpainting': 'stability-ai/stable-diffusion-inpainting',
+    'ad-inpaint': 'logerzhu/ad-inpaint',
+    'face-to-many': 'fofr/face-to-many'
+  };
+
+  const replicateModel = modelMap[model] || 'ideogram-ai/ideogram-character';
+
+  console.log('=== IMAGE EDITOR ===');
+  console.log('User ID:', userId);
+  console.log('Background:', backgroundImage?.substring(0, 50));
+  console.log('Character:', characterImage?.substring(0, 50));
+  console.log('Prompt:', prompt);
+  console.log('Model:', replicateModel);
+
+  try {
+    let inputParams = {};
+
+    // Configurar input baseado no modelo
+    if (model === 'ideogram-character') {
+      inputParams = {
+        prompt: prompt,
+        image: characterImage,
+        style: 'realistic'
+      };
+    } else if (model === 'flux-fill-pro') {
+      inputParams = {
+        image: backgroundImage,
+        prompt: prompt
+      };
+    } else if (model === 'sd-inpainting') {
+      inputParams = {
+        image: backgroundImage,
+        prompt: prompt,
+        num_outputs: 1
+      };
+    } else if (model === 'ad-inpaint') {
+      inputParams = {
+        image_path: backgroundImage,
+        prompt: prompt
+      };
+    } else if (model === 'face-to-many') {
+      inputParams = {
+        image: characterImage,
+        prompt: prompt,
+        style: 'video game'
+      };
+    }
+
+    const response = await axios.post(
+      'https://api.replicate.com/v1/models/' + replicateModel + '/predictions',
+      { input: inputParams },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log('Response Status:', response.data.status);
+    console.log('Prediction ID:', response.data.id);
+
+    const predictionId = response.data.id;
+    const status = response.data.status === 'succeeded' ? 'completed' : 'generating';
+    const outputUrl = response.data.output || null;
+
+    // Criar sessão
+    const session = new Session({
+      userId,
+      name: `Edited Image ${Date.now()}`,
+      type: 'image',
+      prompt: prompt,
+      model: replicateModel,
+      status: status,
+      outputUrl: Array.isArray(outputUrl) ? outputUrl[0] : outputUrl,
+      predictionId: predictionId,
+    });
+    await session.save();
+
+    res.json({ 
+      predictionId: response.data.id, 
+      sessionId: session._id,
+      status: response.data.status,
+      output: response.data.output
+    });
+  } catch (error) {
+    console.error('Erro no Image Editor:', error.response?.data || error.message);
+    res.status(500).json({ message: error.response?.data?.detail || error.message });
+  }
+});
+
 module.exports = router;
 
