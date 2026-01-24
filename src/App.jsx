@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Search, Settings, User, Plus, Play, Image, Video, Clock, Star, Folder, Upload, Download, Trash2, Share2, Heart, Eye, Edit, MoreVertical, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Check, X, Home, Grid, List, FileText, Camera, Mic, Send, MessageSquare, Users, Lock, Globe, Mail, Phone, Calendar, Tag, Filter, SortAsc, SortDesc, RefreshCw, Save, Undo, Redo, ZoomIn, ZoomOut, RotateCcw, RotateCw, Crop, Scissors, Paintbrush, Palette, Type, AlignLeft, AlignCenter, AlignRight, AlignJustify, Bold, Italic, Underline, Strikethrough, Link, Unlink, Code, Quote, ListOrdered, Table, BarChart, LineChart, PieChart, Bell, AlertCircle, Info, HelpCircle, Shield, Key, Unlock, UserPlus, UserMinus, UserCheck, UserX, UserCircle, UserSquare } from 'lucide-react';
-import { generateVideo, generateImage, getPrediction, getSessions, uploadAsset, getAssets, animateCharacter, deleteSession } from './services/api';
+import { generateVideo, generateImage, getPrediction, getSessions, uploadAsset, getAssets, animateCharacter, deleteSession, lipsyncWithTTS } from './services/api';
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
@@ -618,6 +618,281 @@ const Animate = ({
   </div>
 );
 
+const Lipsync = ({
+  lipsyncVideoPreview,
+  lipsyncVideoUrl,
+  lipsyncText,
+  setLipsyncText,
+  lipsyncVoice,
+  setLipsyncVoice,
+  lipsyncEmotion,
+  setLipsyncEmotion,
+  lipsyncLanguage,
+  setLipsyncLanguage,
+  lipsyncSpeed,
+  setLipsyncSpeed,
+  isGeneratingLipsync,
+  lipsyncResult,
+  setLipsyncResult,
+  handleLipsyncVideoUpload,
+  handleGenerateLipsync,
+  credits
+}) => (
+  <div className="p-6">
+    <div className="flex justify-between items-center mb-6">
+      <h1 className="text-2xl font-bold text-gray-800">Lipsync Studio</h1>
+      <div className="flex items-center space-x-4">
+        <div className="bg-blue-50 px-4 py-2 rounded-full flex items-center space-x-2">
+          <Star className="w-4 h-4 text-yellow-500" />
+          <span className="text-sm font-medium">{credits} credits</span>
+        </div>
+        <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+          Upgrade
+        </button>
+      </div>
+    </div>
+
+    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <p className="text-blue-800 text-sm">
+        <strong>Como funciona:</strong> Faça upload de um vídeo com uma pessoa, digite o texto que deseja que ela "fale", 
+        escolha a voz e o sistema irá gerar o áudio e sincronizar os lábios automaticamente!
+      </p>
+    </div>
+    
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Lipsync Controls */}
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Configurações</h2>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Upload do Vídeo</label>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-pink-500 transition-colors">
+            {lipsyncVideoPreview ? (
+              <div className="relative">
+                <video src={lipsyncVideoPreview} className="max-h-32 mx-auto rounded" muted />
+                <p className="text-xs text-green-600 mt-2">✓ Vídeo carregado</p>
+              </div>
+            ) : (
+              <>
+                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">Arraste ou clique para upload</p>
+                <p className="text-xs text-gray-400 mt-1">MP4, MOV (máx. 30s recomendado)</p>
+              </>
+            )}
+            <input
+              type="file"
+              accept="video/*"
+              onChange={handleLipsyncVideoUpload}
+              className="hidden"
+              id="lipsync-video-upload"
+            />
+            <label 
+              htmlFor="lipsync-video-upload"
+              className="mt-2 inline-block text-xs text-pink-600 hover:text-pink-700 cursor-pointer"
+            >
+              {lipsyncVideoPreview ? 'Trocar vídeo' : 'Selecionar arquivo'}
+            </label>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Texto para Falar</label>
+          <textarea
+            value={lipsyncText}
+            onChange={(e) => setLipsyncText(e.target.value)}
+            placeholder="Digite o texto que a pessoa irá 'falar'..."
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+            rows={4}
+          />
+          <p className="text-xs text-gray-500 mt-1">{lipsyncText.length}/1000 caracteres</p>
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Voz</label>
+          <select
+            value={lipsyncVoice}
+            onChange={(e) => setLipsyncVoice(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+          >
+            <optgroup label="Português">
+              <option value="Portuguese_Narrator">Narrador (Masculino)</option>
+              <option value="Portuguese_SweetGirl">Garota Doce (Feminino)</option>
+              <option value="Portuguese_BossyLeader">Líder Firme (Masculino)</option>
+              <option value="Portuguese_SereneWoman">Mulher Serena (Feminino)</option>
+              <option value="Portuguese_Comedian">Comediante (Masculino)</option>
+              <option value="Portuguese_AttractiveGirl">Garota Atraente (Feminino)</option>
+              <option value="Portuguese_MaturePartner">Parceiro Maduro (Masculino)</option>
+              <option value="Portuguese_LovelyLady">Senhora Adorável (Feminino)</option>
+            </optgroup>
+            <optgroup label="Inglês">
+              <option value="English_FriendlyPerson">Pessoa Amigável</option>
+              <option value="English_CalmWoman">Mulher Calma</option>
+              <option value="English_ManWithDeepVoice">Homem Voz Grave</option>
+              <option value="English_PlayfulGirl">Garota Divertida</option>
+              <option value="English_MatureBoss">Chefe Maduro</option>
+              <option value="English_LovelyGirl">Garota Adorável</option>
+            </optgroup>
+            <optgroup label="Espanhol">
+              <option value="Spanish_SereneWoman">Mujer Serena</option>
+              <option value="Spanish_Narrator">Narrador</option>
+              <option value="Spanish_Comedian">Comediante</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Idioma</label>
+          <select
+            value={lipsyncLanguage}
+            onChange={(e) => setLipsyncLanguage(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+          >
+            <option value="Portuguese">Português</option>
+            <option value="English">Inglês</option>
+            <option value="Spanish">Espanhol</option>
+            <option value="French">Francês</option>
+            <option value="German">Alemão</option>
+            <option value="Italian">Italiano</option>
+            <option value="Japanese">Japonês</option>
+            <option value="Korean">Coreano</option>
+            <option value="Chinese">Chinês</option>
+          </select>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Emoção</label>
+          <select
+            value={lipsyncEmotion}
+            onChange={(e) => setLipsyncEmotion(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+          >
+            <option value="auto">Automático</option>
+            <option value="happy">Feliz</option>
+            <option value="sad">Triste</option>
+            <option value="angry">Raiva</option>
+            <option value="fearful">Medo</option>
+            <option value="surprised">Surpreso</option>
+            <option value="calm">Calmo</option>
+            <option value="neutral">Neutro</option>
+          </select>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Velocidade: {lipsyncSpeed}x</label>
+          <input
+            type="range"
+            min="0.5"
+            max="2"
+            step="0.1"
+            value={lipsyncSpeed}
+            onChange={(e) => setLipsyncSpeed(parseFloat(e.target.value))}
+            className="w-full"
+          />
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>0.5x (Lento)</span>
+            <span>2x (Rápido)</span>
+          </div>
+        </div>
+        
+        <button
+          onClick={handleGenerateLipsync}
+          disabled={isGeneratingLipsync || !lipsyncVideoUrl || !lipsyncText.trim()}
+          className={`w-full py-3 rounded-lg font-medium transition-colors ${
+            isGeneratingLipsync || !lipsyncVideoUrl || !lipsyncText.trim()
+              ? 'bg-gray-300 cursor-not-allowed'
+              : 'bg-pink-600 hover:bg-pink-700 text-white'
+          }`}
+        >
+          {isGeneratingLipsync ? 'Gerando Lipsync...' : 'Gerar Lipsync'}
+        </button>
+
+        {isGeneratingLipsync && (
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            ⏱️ Isso pode levar 2-4 minutos...
+          </p>
+        )}
+      </div>
+      
+      {/* Preview */}
+      <div className="lg:col-span-2">
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Preview</h2>
+          
+          {isGeneratingLipsync ? (
+            <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mb-4"></div>
+              <p className="text-gray-600">Gerando áudio e sincronizando lábios...</p>
+              <p className="text-sm text-gray-500 mt-2">Etapa 1: Gerando áudio com IA</p>
+              <p className="text-sm text-gray-500">Etapa 2: Sincronizando lábios com vídeo</p>
+            </div>
+          ) : lipsyncResult ? (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="aspect-video bg-black rounded-lg mb-4 overflow-hidden">
+                <video 
+                  src={lipsyncResult} 
+                  controls 
+                  autoPlay 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="flex gap-2 mb-4">
+                <a 
+                  href={lipsyncResult} 
+                  download 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-pink-600 text-white py-2 px-4 rounded-lg text-center hover:bg-pink-700"
+                >
+                  Download Vídeo
+                </a>
+                <button 
+                  onClick={() => setLipsyncResult(null)}
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                >
+                  Criar Novo
+                </button>
+              </div>
+            </div>
+          ) : lipsyncVideoPreview ? (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="aspect-video bg-black rounded-lg mb-4 overflow-hidden">
+                <video 
+                  src={lipsyncVideoPreview} 
+                  controls 
+                  muted
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="bg-white p-3 rounded border">
+                <h3 className="font-medium text-gray-800 mb-2">Vídeo Original</h3>
+                <p className="text-gray-600 text-sm">Digite o texto e clique em "Gerar Lipsync" para sincronizar</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg">
+              <Video className="w-12 h-12 text-gray-400 mb-4" />
+              <p className="text-gray-600 text-center">Faça upload de um vídeo para começar</p>
+              <p className="text-sm text-gray-500 mt-2">O vídeo deve conter uma pessoa visível</p>
+            </div>
+          )}
+        </div>
+
+        {/* Dicas */}
+        <div className="mt-6 bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">💡 Dicas para melhores resultados</h2>
+          <ul className="space-y-2 text-sm text-gray-600">
+            <li>• Use vídeos com o rosto claramente visível e bem iluminado</li>
+            <li>• Vídeos de 5-30 segundos funcionam melhor</li>
+            <li>• Evite vídeos com múltiplas pessoas</li>
+            <li>• O texto deve corresponder aproximadamente à duração do vídeo</li>
+            <li>• Escolha uma voz que combine com a aparência da pessoa</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const DashboardApp = ({
   sidebarOpen,
   setSidebarOpen,
@@ -662,7 +937,24 @@ const DashboardApp = ({
   setAnimatedVideo,
   handleAnimateCharacter,
   handleAnimateImageUpload,
-  handleDeleteSession
+  handleDeleteSession,
+  lipsyncVideoPreview,
+  lipsyncVideoUrl,
+  lipsyncText,
+  setLipsyncText,
+  lipsyncVoice,
+  setLipsyncVoice,
+  lipsyncEmotion,
+  setLipsyncEmotion,
+  lipsyncLanguage,
+  setLipsyncLanguage,
+  lipsyncSpeed,
+  setLipsyncSpeed,
+  isGeneratingLipsync,
+  lipsyncResult,
+  setLipsyncResult,
+  handleLipsyncVideoUpload,
+  handleGenerateLipsync
 }) => {
   const Dashboard = () => (
     <div className="p-6">
@@ -971,6 +1263,13 @@ const DashboardApp = ({
             Generate Images
           </button>
           <button 
+            onClick={() => setActiveTab('lipsync')} 
+            className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'lipsync' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'}`}
+          >
+            <Mic className="w-5 h-5 mr-3" />
+            Lipsync Studio
+          </button>
+          <button 
             onClick={() => setActiveTab('workflows')} 
             className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'workflows' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'}`}
           >
@@ -1151,6 +1450,28 @@ const DashboardApp = ({
               setGeneratedImage={setGeneratedImage}
             />
           )}
+          {activeTab === 'lipsync' && (
+            <Lipsync
+              lipsyncVideoPreview={lipsyncVideoPreview}
+              lipsyncVideoUrl={lipsyncVideoUrl}
+              lipsyncText={lipsyncText}
+              setLipsyncText={setLipsyncText}
+              lipsyncVoice={lipsyncVoice}
+              setLipsyncVoice={setLipsyncVoice}
+              lipsyncEmotion={lipsyncEmotion}
+              setLipsyncEmotion={setLipsyncEmotion}
+              lipsyncLanguage={lipsyncLanguage}
+              setLipsyncLanguage={setLipsyncLanguage}
+              lipsyncSpeed={lipsyncSpeed}
+              setLipsyncSpeed={setLipsyncSpeed}
+              isGeneratingLipsync={isGeneratingLipsync}
+              lipsyncResult={lipsyncResult}
+              setLipsyncResult={setLipsyncResult}
+              handleLipsyncVideoUpload={handleLipsyncVideoUpload}
+              handleGenerateLipsync={handleGenerateLipsync}
+              credits={credits}
+            />
+          )}
           {activeTab === 'workflows' && <Workflows />}
           {activeTab === 'live' && <Live />}
         </main>
@@ -1179,6 +1500,16 @@ const App = () => {
   const [animatedVideo, setAnimatedVideo] = useState(null);
   const [animateImageFile, setAnimateImageFile] = useState(null);
   const [animateImagePreview, setAnimateImagePreview] = useState(null);
+  const [lipsyncVideoFile, setLipsyncVideoFile] = useState(null);
+  const [lipsyncVideoPreview, setLipsyncVideoPreview] = useState(null);
+  const [lipsyncVideoUrl, setLipsyncVideoUrl] = useState('');
+  const [lipsyncText, setLipsyncText] = useState('');
+  const [lipsyncVoice, setLipsyncVoice] = useState('Portuguese_Narrator');
+  const [lipsyncEmotion, setLipsyncEmotion] = useState('auto');
+  const [lipsyncLanguage, setLipsyncLanguage] = useState('Portuguese');
+  const [lipsyncSpeed, setLipsyncSpeed] = useState(1);
+  const [isGeneratingLipsync, setIsGeneratingLipsync] = useState(false);
+  const [lipsyncResult, setLipsyncResult] = useState(null);
   const [credits, setCredits] = useState(125);
   const [user, setUser] = useState({ name: 'David', plan: 'Personal - Free' });
   const [sessions, setSessions] = useState([]);
@@ -1500,6 +1831,92 @@ const App = () => {
     }
   };
 
+  const handleLipsyncVideoUpload = async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setLipsyncVideoFile(file);
+      
+      // Criar preview local
+      const videoURL = URL.createObjectURL(file);
+      setLipsyncVideoPreview(videoURL);
+      
+      // Fazer upload para Cloudinary
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('name', file.name);
+        formData.append('type', 'video');
+        
+        const uploadResponse = await uploadAsset(formData);
+        if (uploadResponse.data && uploadResponse.data.url) {
+          setLipsyncVideoUrl(uploadResponse.data.url);
+          console.log('Video uploaded:', uploadResponse.data.url);
+        }
+      } catch (error) {
+        console.error('Erro no upload:', error);
+        alert('Erro ao fazer upload do vídeo. Tente novamente.');
+      }
+    }
+  };
+
+  const handleGenerateLipsync = async () => {
+    if (!lipsyncVideoUrl) {
+      alert('Por favor, faça upload de um vídeo primeiro.');
+      return;
+    }
+    if (!lipsyncText.trim()) {
+      alert('Por favor, digite o texto que deseja sincronizar.');
+      return;
+    }
+
+    try {
+      setIsGeneratingLipsync(true);
+      setLipsyncResult(null);
+
+      const response = await lipsyncWithTTS({
+        videoUrl: lipsyncVideoUrl,
+        text: lipsyncText,
+        voice: lipsyncVoice,
+        emotion: lipsyncEmotion,
+        language: lipsyncLanguage,
+        speed: lipsyncSpeed,
+        syncMode: 'loop'
+      });
+
+      const { predictionId } = response.data;
+
+      // Polling para verificar status
+      const checkStatus = async () => {
+        try {
+          const statusResponse = await getPrediction(predictionId);
+          const status = statusResponse.data.status;
+
+          if (status === 'succeeded') {
+            setIsGeneratingLipsync(false);
+            setLipsyncResult(statusResponse.data.output);
+            alert('Lipsync gerado com sucesso!');
+          } else if (status === 'failed') {
+            setIsGeneratingLipsync(false);
+            alert('Erro ao gerar lipsync. Tente novamente.');
+          } else {
+            setTimeout(checkStatus, 3000);
+          }
+        } catch (error) {
+          console.error('Erro ao verificar status:', error);
+          setIsGeneratingLipsync(false);
+          alert('Erro ao verificar status do lipsync.');
+        }
+      };
+
+      setTimeout(checkStatus, 5000);
+
+    } catch (error) {
+      console.error('Erro ao gerar lipsync:', error);
+      setIsGeneratingLipsync(false);
+      alert(error.response?.data?.message || 'Erro ao gerar lipsync.');
+    }
+  };
+
   const handleUploadAsset = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -1587,6 +2004,23 @@ const App = () => {
                 handleAnimateCharacter={handleAnimateCharacter}
                 handleAnimateImageUpload={handleAnimateImageUpload}
                 handleDeleteSession={handleDeleteSession}
+                lipsyncVideoPreview={lipsyncVideoPreview}
+                lipsyncVideoUrl={lipsyncVideoUrl}
+                lipsyncText={lipsyncText}
+                setLipsyncText={setLipsyncText}
+                lipsyncVoice={lipsyncVoice}
+                setLipsyncVoice={setLipsyncVoice}
+                lipsyncEmotion={lipsyncEmotion}
+                setLipsyncEmotion={setLipsyncEmotion}
+                lipsyncLanguage={lipsyncLanguage}
+                setLipsyncLanguage={setLipsyncLanguage}
+                lipsyncSpeed={lipsyncSpeed}
+                setLipsyncSpeed={setLipsyncSpeed}
+                isGeneratingLipsync={isGeneratingLipsync}
+                lipsyncResult={lipsyncResult}
+                setLipsyncResult={setLipsyncResult}
+                handleLipsyncVideoUpload={handleLipsyncVideoUpload}
+                handleGenerateLipsync={handleGenerateLipsync}
               />
             </ProtectedRoute>
           }
@@ -1640,6 +2074,23 @@ const App = () => {
                 handleAnimateCharacter={handleAnimateCharacter}
                 handleAnimateImageUpload={handleAnimateImageUpload}
                 handleDeleteSession={handleDeleteSession}
+                lipsyncVideoPreview={lipsyncVideoPreview}
+                lipsyncVideoUrl={lipsyncVideoUrl}
+                lipsyncText={lipsyncText}
+                setLipsyncText={setLipsyncText}
+                lipsyncVoice={lipsyncVoice}
+                setLipsyncVoice={setLipsyncVoice}
+                lipsyncEmotion={lipsyncEmotion}
+                setLipsyncEmotion={setLipsyncEmotion}
+                lipsyncLanguage={lipsyncLanguage}
+                setLipsyncLanguage={setLipsyncLanguage}
+                lipsyncSpeed={lipsyncSpeed}
+                setLipsyncSpeed={setLipsyncSpeed}
+                isGeneratingLipsync={isGeneratingLipsync}
+                lipsyncResult={lipsyncResult}
+                setLipsyncResult={setLipsyncResult}
+                handleLipsyncVideoUpload={handleLipsyncVideoUpload}
+                handleGenerateLipsync={handleGenerateLipsync}
               />
             </ProtectedRoute>
           }

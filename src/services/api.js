@@ -71,6 +71,16 @@ export const getPrediction = (predictionId) =>
 export const animateCharacter = (data) =>
   api.post('/replicate/animate-character', data);
 
+// LIPSYNC & TTS
+export const generateAudio = (data) =>
+  api.post('/replicate/generate-audio', data);
+
+export const generateLipsync = (data) =>
+  api.post('/replicate/generate-lipsync', data);
+
+export const lipsyncWithTTS = (data) =>
+  api.post('/replicate/lipsync-with-tts', data);
+
 // AUTH
 export const login = (email, password) =>
   api.post('/auth/login', { email, password });
