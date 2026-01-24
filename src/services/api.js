@@ -81,6 +81,10 @@ export const generateLipsync = (data) =>
 export const lipsyncWithTTS = (data) =>
   api.post('/replicate/lipsync-with-tts', data);
 
+// IMAGE EDITOR
+export const editImage = (data) =>
+  api.post('/replicate/edit-image', data);
+
 // AUTH
 export const login = (email, password) =>
   api.post('/auth/login', { email, password });

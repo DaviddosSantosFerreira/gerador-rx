@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Search, Settings, User, Plus, Play, Image, Video, Clock, Star, Folder, Upload, Download, Trash2, Share2, Heart, Eye, Edit, MoreVertical, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Check, X, Home, Grid, List, FileText, Camera, Mic, Send, MessageSquare, Users, Lock, Globe, Mail, Phone, Calendar, Tag, Filter, SortAsc, SortDesc, RefreshCw, Save, Undo, Redo, ZoomIn, ZoomOut, RotateCcw, RotateCw, Crop, Scissors, Paintbrush, Palette, Type, AlignLeft, AlignCenter, AlignRight, AlignJustify, Bold, Italic, Underline, Strikethrough, Link, Unlink, Code, Quote, ListOrdered, Table, BarChart, LineChart, PieChart, Bell, AlertCircle, Info, HelpCircle, Shield, Key, Unlock, UserPlus, UserMinus, UserCheck, UserX, UserCircle, UserSquare } from 'lucide-react';
-import { generateVideo, generateImage, getPrediction, getSessions, uploadAsset, getAssets, animateCharacter, deleteSession, lipsyncWithTTS } from './services/api';
+import { generateVideo, generateImage, getPrediction, getSessions, uploadAsset, getAssets, animateCharacter, deleteSession, lipsyncWithTTS, editImage } from './services/api';
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
@@ -953,6 +953,230 @@ const Lipsync = ({
   </div>
 );
 
+const ImageEditor = ({
+  editorBackgroundPreview,
+  editorCharacterPreview,
+  editorPrompt,
+  setEditorPrompt,
+  editorModel,
+  setEditorModel,
+  isEditingImage,
+  editedImageResult,
+  setEditedImageResult,
+  handleEditorBackgroundUpload,
+  handleEditorCharacterUpload,
+  handleEditImage,
+  credits
+}) => (
+  <div className="p-6">
+    <div className="flex justify-between items-center mb-6">
+      <h1 className="text-2xl font-bold text-gray-800">Image Editor</h1>
+      <div className="flex items-center space-x-4">
+        <div className="bg-blue-50 px-4 py-2 rounded-full flex items-center space-x-2">
+          <Star className="w-4 h-4 text-yellow-500" />
+          <span className="text-sm font-medium">{credits} credits</span>
+        </div>
+        <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+          Upgrade
+        </button>
+      </div>
+    </div>
+
+    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+      <p className="text-orange-800 text-sm">
+        <strong>Como funciona:</strong> Faça upload de um cenário (fundo) e/ou um personagem, descreva como quer combinar as imagens, e a IA irá criar a composição!
+      </p>
+    </div>
+    
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Editor Controls */}
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Configurações</h2>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">📍 Cenário/Fundo</label>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-orange-500 transition-colors">
+            {editorBackgroundPreview ? (
+              <img src={editorBackgroundPreview} alt="Background" className="max-h-24 mx-auto rounded" />
+            ) : (
+              <>
+                <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                <p className="text-xs text-gray-500">Upload do cenário</p>
+              </>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleEditorBackgroundUpload}
+              className="hidden"
+              id="editor-background-upload"
+            />
+            <label 
+              htmlFor="editor-background-upload"
+              className="mt-1 inline-block text-xs text-orange-600 hover:text-orange-700 cursor-pointer"
+            >
+              {editorBackgroundPreview ? 'Trocar' : 'Selecionar'}
+            </label>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">👤 Personagem (Referência)</label>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-orange-500 transition-colors">
+            {editorCharacterPreview ? (
+              <img src={editorCharacterPreview} alt="Character" className="max-h-24 mx-auto rounded" />
+            ) : (
+              <>
+                <User className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                <p className="text-xs text-gray-500">Upload do personagem</p>
+              </>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleEditorCharacterUpload}
+              className="hidden"
+              id="editor-character-upload"
+            />
+            <label 
+              htmlFor="editor-character-upload"
+              className="mt-1 inline-block text-xs text-orange-600 hover:text-orange-700 cursor-pointer"
+            >
+              {editorCharacterPreview ? 'Trocar' : 'Selecionar'}
+            </label>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">✏️ Descreva a edição</label>
+          <textarea
+            value={editorPrompt}
+            onChange={(e) => setEditorPrompt(e.target.value)}
+            placeholder="Ex: Coloque o personagem sentado na cadeira do podcast, usando fones de ouvido, próximo ao microfone..."
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            rows={4}
+          />
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">🤖 Modelo</label>
+          <select
+            value={editorModel}
+            onChange={(e) => setEditorModel(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            <option value="ideogram-character">Ideogram Character (Melhor para personagens)</option>
+            <option value="flux-fill-pro">Flux Fill Pro (Inpainting profissional)</option>
+            <option value="sd-inpainting">Stable Diffusion Inpainting (Edição geral)</option>
+            <option value="ad-inpaint">AD Inpaint (Inserir em cenários)</option>
+            <option value="face-to-many">Face to Many (Transformar rostos)</option>
+          </select>
+        </div>
+        
+        <button
+          onClick={handleEditImage}
+          disabled={isEditingImage || (!editorBackgroundPreview && !editorCharacterPreview) || !editorPrompt.trim()}
+          className={`w-full py-3 rounded-lg font-medium transition-colors ${
+            isEditingImage || (!editorBackgroundPreview && !editorCharacterPreview) || !editorPrompt.trim()
+              ? 'bg-gray-300 cursor-not-allowed'
+              : 'bg-orange-600 hover:bg-orange-700 text-white'
+          }`}
+        >
+          {isEditingImage ? 'Editando...' : 'Criar Imagem'}
+        </button>
+      </div>
+      
+      {/* Preview */}
+      <div className="lg:col-span-2">
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Preview</h2>
+          
+          {isEditingImage ? (
+            <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mb-4"></div>
+              <p className="text-gray-600">Criando sua imagem...</p>
+              <p className="text-sm text-gray-500 mt-2">Isso pode levar 30-60 segundos</p>
+            </div>
+          ) : editedImageResult ? (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="aspect-square max-h-96 mx-auto bg-black rounded-lg mb-4 overflow-hidden flex items-center justify-center">
+                <img 
+                  src={editedImageResult} 
+                  alt="Edited" 
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+              <div className="flex gap-2 mb-4">
+                <a 
+                  href={editedImageResult} 
+                  download 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-orange-600 text-white py-2 px-4 rounded-lg text-center hover:bg-orange-700"
+                >
+                  Download Imagem
+                </a>
+                <button 
+                  onClick={() => setEditedImageResult(null)}
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                >
+                  Criar Nova
+                </button>
+              </div>
+            </div>
+          ) : (editorBackgroundPreview || editorCharacterPreview) ? (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Cenário</p>
+                  <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden flex items-center justify-center">
+                    {editorBackgroundPreview ? (
+                      <img src={editorBackgroundPreview} alt="Background" className="max-w-full max-h-full object-contain" />
+                    ) : (
+                      <span className="text-gray-400 text-sm">Não selecionado</span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Personagem</p>
+                  <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden flex items-center justify-center">
+                    {editorCharacterPreview ? (
+                      <img src={editorCharacterPreview} alt="Character" className="max-w-full max-h-full object-contain" />
+                    ) : (
+                      <span className="text-gray-400 text-sm">Não selecionado</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white p-3 rounded border text-center">
+                <p className="text-gray-600 text-sm">Descreva como combinar as imagens e clique em "Criar Imagem"</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg">
+              <Image className="w-12 h-12 text-gray-400 mb-4" />
+              <p className="text-gray-600 text-center">Faça upload das imagens para começar</p>
+              <p className="text-sm text-gray-500 mt-2">Cenário + Personagem = Composição perfeita!</p>
+            </div>
+          )}
+        </div>
+
+        {/* Exemplos de uso */}
+        <div className="mt-6 bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">💡 Exemplos de prompts</h2>
+          <ul className="space-y-2 text-sm text-gray-600">
+            <li>• "Coloque o personagem sentado na cadeira do podcast, usando fones de ouvido"</li>
+            <li>• "Insira a pessoa na praia, segurando um copo de água de coco"</li>
+            <li>• "Transforme o personagem em um astronauta no espaço"</li>
+            <li>• "Coloque a pessoa no palco de um show de rock"</li>
+            <li>• "Insira o personagem em um cenário de filme de ação"</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const DashboardApp = ({
   sidebarOpen,
   setSidebarOpen,
@@ -1014,7 +1238,19 @@ const DashboardApp = ({
   lipsyncResult,
   setLipsyncResult,
   handleLipsyncVideoUpload,
-  handleGenerateLipsync
+  handleGenerateLipsync,
+  editorBackgroundPreview,
+  editorCharacterPreview,
+  editorPrompt,
+  setEditorPrompt,
+  editorModel,
+  setEditorModel,
+  isEditingImage,
+  editedImageResult,
+  setEditedImageResult,
+  handleEditorBackgroundUpload,
+  handleEditorCharacterUpload,
+  handleEditImage
 }) => {
   const Dashboard = () => (
     <div className="p-6">
@@ -1323,6 +1559,13 @@ const DashboardApp = ({
             Generate Images
           </button>
           <button 
+            onClick={() => setActiveTab('image-editor')} 
+            className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'image-editor' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'}`}
+          >
+            <Edit className="w-5 h-5 mr-3" />
+            Image Editor
+          </button>
+          <button 
             onClick={() => setActiveTab('lipsync')} 
             className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'lipsync' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'}`}
           >
@@ -1510,6 +1753,23 @@ const DashboardApp = ({
               setGeneratedImage={setGeneratedImage}
             />
           )}
+          {activeTab === 'image-editor' && (
+            <ImageEditor
+              editorBackgroundPreview={editorBackgroundPreview}
+              editorCharacterPreview={editorCharacterPreview}
+              editorPrompt={editorPrompt}
+              setEditorPrompt={setEditorPrompt}
+              editorModel={editorModel}
+              setEditorModel={setEditorModel}
+              isEditingImage={isEditingImage}
+              editedImageResult={editedImageResult}
+              setEditedImageResult={setEditedImageResult}
+              handleEditorBackgroundUpload={handleEditorBackgroundUpload}
+              handleEditorCharacterUpload={handleEditorCharacterUpload}
+              handleEditImage={handleEditImage}
+              credits={credits}
+            />
+          )}
           {activeTab === 'lipsync' && (
             <Lipsync
               lipsyncVideoPreview={lipsyncVideoPreview}
@@ -1570,6 +1830,16 @@ const App = () => {
   const [lipsyncSpeed, setLipsyncSpeed] = useState(1);
   const [isGeneratingLipsync, setIsGeneratingLipsync] = useState(false);
   const [lipsyncResult, setLipsyncResult] = useState(null);
+  const [editorBackgroundFile, setEditorBackgroundFile] = useState(null);
+  const [editorBackgroundPreview, setEditorBackgroundPreview] = useState(null);
+  const [editorBackgroundUrl, setEditorBackgroundUrl] = useState('');
+  const [editorCharacterFile, setEditorCharacterFile] = useState(null);
+  const [editorCharacterPreview, setEditorCharacterPreview] = useState(null);
+  const [editorCharacterUrl, setEditorCharacterUrl] = useState('');
+  const [editorPrompt, setEditorPrompt] = useState('');
+  const [editorModel, setEditorModel] = useState('ideogram-character');
+  const [isEditingImage, setIsEditingImage] = useState(false);
+  const [editedImageResult, setEditedImageResult] = useState(null);
   const [credits, setCredits] = useState(125);
   const [user, setUser] = useState({ name: 'David', plan: 'Personal - Free' });
   const [sessions, setSessions] = useState([]);
@@ -1977,6 +2247,114 @@ const App = () => {
     }
   };
 
+  const handleEditorBackgroundUpload = async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setEditorBackgroundFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditorBackgroundPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+      
+      // Upload para Cloudinary
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('name', file.name);
+        formData.append('type', 'image');
+        const uploadResponse = await uploadAsset(formData);
+        if (uploadResponse.data && uploadResponse.data.url) {
+          setEditorBackgroundUrl(uploadResponse.data.url);
+        }
+      } catch (error) {
+        console.error('Erro no upload:', error);
+      }
+    }
+  };
+
+  const handleEditorCharacterUpload = async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setEditorCharacterFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditorCharacterPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+      
+      // Upload para Cloudinary
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('name', file.name);
+        formData.append('type', 'image');
+        const uploadResponse = await uploadAsset(formData);
+        if (uploadResponse.data && uploadResponse.data.url) {
+          setEditorCharacterUrl(uploadResponse.data.url);
+        }
+      } catch (error) {
+        console.error('Erro no upload:', error);
+      }
+    }
+  };
+
+  const handleEditImage = async () => {
+    if (!editorPrompt.trim()) {
+      alert('Por favor, descreva o que deseja fazer.');
+      return;
+    }
+    if (!editorBackgroundUrl && !editorCharacterUrl) {
+      alert('Por favor, faça upload de pelo menos uma imagem.');
+      return;
+    }
+
+    try {
+      setIsEditingImage(true);
+      setEditedImageResult(null);
+
+      const response = await editImage({
+        backgroundImage: editorBackgroundUrl,
+        characterImage: editorCharacterUrl,
+        prompt: editorPrompt,
+        model: editorModel
+      });
+
+      const { predictionId } = response.data;
+
+      // Polling para verificar status
+      const checkStatus = async () => {
+        try {
+          const statusResponse = await getPrediction(predictionId);
+          const status = statusResponse.data.status;
+
+          if (status === 'succeeded') {
+            setIsEditingImage(false);
+            const output = statusResponse.data.output;
+            setEditedImageResult(Array.isArray(output) ? output[0] : output);
+            alert('Imagem editada com sucesso!');
+          } else if (status === 'failed') {
+            setIsEditingImage(false);
+            alert('Erro ao editar imagem. Tente novamente.');
+          } else {
+            setTimeout(checkStatus, 3000);
+          }
+        } catch (error) {
+          console.error('Erro ao verificar status:', error);
+          setIsEditingImage(false);
+          alert('Erro ao verificar status.');
+        }
+      };
+
+      setTimeout(checkStatus, 3000);
+
+    } catch (error) {
+      console.error('Erro ao editar imagem:', error);
+      setIsEditingImage(false);
+      alert(error.response?.data?.message || 'Erro ao editar imagem.');
+    }
+  };
+
   const handleUploadAsset = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -2081,6 +2459,18 @@ const App = () => {
                 setLipsyncResult={setLipsyncResult}
                 handleLipsyncVideoUpload={handleLipsyncVideoUpload}
                 handleGenerateLipsync={handleGenerateLipsync}
+                editorBackgroundPreview={editorBackgroundPreview}
+                editorCharacterPreview={editorCharacterPreview}
+                editorPrompt={editorPrompt}
+                setEditorPrompt={setEditorPrompt}
+                editorModel={editorModel}
+                setEditorModel={setEditorModel}
+                isEditingImage={isEditingImage}
+                editedImageResult={editedImageResult}
+                setEditedImageResult={setEditedImageResult}
+                handleEditorBackgroundUpload={handleEditorBackgroundUpload}
+                handleEditorCharacterUpload={handleEditorCharacterUpload}
+                handleEditImage={handleEditImage}
               />
             </ProtectedRoute>
           }
@@ -2151,6 +2541,18 @@ const App = () => {
                 setLipsyncResult={setLipsyncResult}
                 handleLipsyncVideoUpload={handleLipsyncVideoUpload}
                 handleGenerateLipsync={handleGenerateLipsync}
+                editorBackgroundPreview={editorBackgroundPreview}
+                editorCharacterPreview={editorCharacterPreview}
+                editorPrompt={editorPrompt}
+                setEditorPrompt={setEditorPrompt}
+                editorModel={editorModel}
+                setEditorModel={setEditorModel}
+                isEditingImage={isEditingImage}
+                editedImageResult={editedImageResult}
+                setEditedImageResult={setEditedImageResult}
+                handleEditorBackgroundUpload={handleEditorBackgroundUpload}
+                handleEditorCharacterUpload={handleEditorCharacterUpload}
+                handleEditImage={handleEditImage}
               />
             </ProtectedRoute>
           }
