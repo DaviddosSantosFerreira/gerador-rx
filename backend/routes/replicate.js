@@ -489,14 +489,12 @@ router.post('/edit-image', auth, async (req, res) => {
 
   // Mapear modelos
   const modelMap = {
-    'ideogram-character': 'ideogram-ai/ideogram-character',
-    'flux-fill-pro': 'black-forest-labs/flux-fill-pro',
-    'sd-inpainting': 'stability-ai/stable-diffusion-inpainting',
-    'ad-inpaint': 'logerzhu/ad-inpaint',
-    'face-to-many': 'fofr/face-to-many'
+    'google/nano-banana': 'google/nano-banana',
+    'black-forest-labs/flux-kontext-pro': 'black-forest-labs/flux-kontext-pro',
+    'ideogram-ai/ideogram-v2': 'ideogram-ai/ideogram-v2'
   };
 
-  const replicateModel = modelMap[model] || 'ideogram-ai/ideogram-character';
+  const replicateModel = modelMap[model] || 'google/nano-banana';
 
   console.log('=== IMAGE EDITOR ===');
   console.log('User ID:', userId);
@@ -509,33 +507,28 @@ router.post('/edit-image', auth, async (req, res) => {
     let inputParams = {};
 
     // Configurar input baseado no modelo
-    if (model === 'ideogram-character') {
-      inputParams = {
-        prompt: prompt,
-        character_reference_image: characterImage,
-        style: 'realistic'
-      };
-    } else if (model === 'flux-fill-pro') {
+    if (model === 'google/nano-banana') {
       inputParams = {
         image: backgroundImage,
         prompt: prompt
       };
-    } else if (model === 'sd-inpainting') {
+      // Adicionar character_reference_image se disponível
+      if (characterImage) {
+        inputParams.character_reference_image = characterImage;
+      }
+    } else if (model === 'black-forest-labs/flux-kontext-pro') {
       inputParams = {
         image: backgroundImage,
-        prompt: prompt,
-        num_outputs: 1
-      };
-    } else if (model === 'ad-inpaint') {
-      inputParams = {
-        image_path: backgroundImage,
         prompt: prompt
       };
-    } else if (model === 'face-to-many') {
+      // Adicionar character_reference_image se disponível
+      if (characterImage) {
+        inputParams.character_reference_image = characterImage;
+      }
+    } else if (model === 'ideogram-ai/ideogram-v2') {
       inputParams = {
-        image: characterImage,
-        prompt: prompt,
-        style: 'video game'
+        image: backgroundImage,
+        prompt: prompt
       };
     }
 

@@ -1065,11 +1065,9 @@ const ImageEditor = ({
             onChange={(e) => setEditorModel(e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
-            <option value="ideogram-character">Ideogram Character (Melhor para personagens)</option>
-            <option value="flux-fill-pro">Flux Fill Pro (Inpainting profissional)</option>
-            <option value="sd-inpainting">Stable Diffusion Inpainting (Edição geral)</option>
-            <option value="ad-inpaint">AD Inpaint (Inserir em cenários)</option>
-            <option value="face-to-many">Face to Many (Transformar rostos)</option>
+            <option value="google/nano-banana">Google Nano Banana</option>
+            <option value="black-forest-labs/flux-kontext-pro">Flux Kontext Pro</option>
+            <option value="ideogram-ai/ideogram-v2">Ideogram V2</option>
           </select>
         </div>
         
@@ -1837,7 +1835,7 @@ const App = () => {
   const [editorCharacterPreview, setEditorCharacterPreview] = useState(null);
   const [editorCharacterUrl, setEditorCharacterUrl] = useState('');
   const [editorPrompt, setEditorPrompt] = useState('');
-  const [editorModel, setEditorModel] = useState('ideogram-character');
+  const [editorModel, setEditorModel] = useState('google/nano-banana');
   const [isEditingImage, setIsEditingImage] = useState(false);
   const [editedImageResult, setEditedImageResult] = useState(null);
   const [credits, setCredits] = useState(125);
